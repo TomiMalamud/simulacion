@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Generador de Números Aleatorios</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        body { padding: 20px; }
+        .loader, .pagination-loader {
+            border: 6px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 6px solid #3498db;
+            width: 60px;
+            height: 60px;
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Generador de Números Aleatorios</h2>
+    <form id="dataForm">
+        <div class="form-group">
+            <label for="sampleSize">Tamaño de Muestra (N):</label>
+            <input type="number" id="sampleSize" value="1000" class="form-control">
+        </div>
+        <div class="form-group">
+            <label for="distribucion">Distribución:</label>
+            <select id="distribucion" class="form-control" onchange="updateParameters();">
+                <option value="uniforme">Uniforme</option>
+                <option value="exponencial">Exponencial</option>
+                <option value="normal">Normal</option>
+            </select>
+        </div>
+        <div id="params"></div>
+        <div class="form-group">
+            <label for="numBins">Cantidad de intervalos:</label>
+            <select id="numBins" class="form-control">
+                <option value="10">10</option>
+                <option value="12">12</option>
+                <option value="16">16</option>
+                <option value="23">23</option>
+            </select>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="generarNumeros()">Generar</button>
+    </form>
+    <div id="loading" class="loader hidden" style="margin-top: 20px;"></div>
+    <h3>Resultados</h3>
+    <img id="histogram" src="" alt="El histograma aparecerá aquí." class="img-fluid">
+    <p>Chi-cuadrado Estadístico: <span id="chiSquareStat"></span></p>
+    <p>Chi-cuadrado P-Valor: <span id="chiSquareP"></span></p>
+    <p>Kolmogorov-Smirnov Estadístico: <span id="kolmogorovStat"></span></p>
+    <p>Kolmogorov-Smirnov P-Valor: <span id="kolmogorovP"></span></p>
+    <div id="dataViewer" class="hidden">
+        <h4>Números Generados</h4>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Valor</th>
+                </tr>
+            </thead>
+            <tbody id="dataBody"></tbody>
+        </table>
+        <nav aria-label="Page navigation example">
+            <ul class="pagination">
+                <li class="page-item"><a class="page-link" href="#" onclick="changePage(-1)">Anterior</a></li>
+                <li class="page-item"><a class="page-link" href="#" onclick="changePage(1)">Siguiente</a></li>
+            </ul>
+        </nav>
+    </div>
+</div>
+<script>
+let currentPage = 0;
+let numPerPage = 100; // Modify as needed
+let generatedData = [];
+
+function updateParameters() {
+    var distribucion = $('#distribucion').val();
+    var paramsHTML = '';
+    if (distribucion === 'uniforme') {
+        paramsHTML = '<div class="form-group"><label for="param1">a (Límite inferior):</label><input type="text" id="param1" value="0" class="form-control"></div>' +
+                     '<div class="form-group"><label for="param2">b (Límite superior):</label><input type="text" id="param2" value="1" class="form-control"></div>';
+    } else if (distribucion === 'exponencial') {
+        paramsHTML = '<div class="form-group"><label for="param1">Lambda (λ):</label><input type="text" id="param1" value="1" class="form-control"></div>';
+    } else if (distribucion === 'normal') {
+        paramsHTML = '<div class="form-group"><label for="param1">Mu (μ, Media):</label><input type="text" id="param1" value="0" class="form-control"></div>' +
+                     '<div class="form-group"><label for="param2">Sigma (σ, Desviación Estándar):</label><input type="text" id="param2" value="1" class="form-control"></div>';
+    }
+    $('#params').html(paramsHTML);
+}
+
+function generarNumeros() {
+    $('#loading').removeClass('hidden');
+    var sampleSize = $('#sampleSize').val();
+    var distribucion = $('#distribucion').val();
+    var param1 = $('#param1').val();
+    var param2 = $('#param2').val();
+    var numBins = $('#numBins').val();
+    var params = {};
+
+    if (distribucion === 'uniforme' || distribucion === 'normal') {
+        params['a'] = param1;
+        params['b'] = param2;
+    } else if (distribucion === 'exponencial') {
+        params['lambda'] = param1;
+    }
+
+    $.ajax({
+        type: 'POST',
+        url: '/generate',
+        contentType: 'application/json',
+        data: JSON.stringify({ muestra: sampleSize, distribucion: distribucion, params: params, intervalos: numBins }),
+        success: function(response) {
+            $('#histogram').attr('src', response.histogram);
+            $('#chiSquareStat').text(response.chi_square_stat);
+            $('#chiSquareP').text(response.chi_square_p);
+            $('#kolmogorovStat').text(response.kolmogorov_stat);
+            $('#kolmogorovP').text(response.kolmogorov_p);
+            $('#loading').addClass('hidden');
+            updateTable(response.data); // Assuming `data` is part of the response
+            $('#dataViewer').removeClass('hidden');
+        },
+        error: function() {
+            alert('Error al procesar la solicitud.');
+            $('#loading').addClass('hidden');
+        }
+    });
+}
+
+function updateTable(data) {
+    generatedData = data; // Store the full dataset
+    currentPage = 0; // Reset to first page
+    renderPage();
+}
+
+function renderPage() {
+    let start = currentPage * numPerPage;
+    let end = start + numPerPage;
+    let slicedData = generatedData.slice(start, end);
+    let tableBody = slicedData.map((value, index) => `<tr><td>${start + index + 1}</td><td>${value}</td></tr>`).join('');
+    $('#dataBody').html(tableBody);
+}
+
+function changePage(dir) {
+    let nextPage = currentPage + dir;
+    let totalPages = Math.ceil(generatedData.length / numPerPage);
+    if (nextPage >= 0 && nextPage < totalPages) {
+        currentPage = nextPage;
+        renderPage();
+    }
+}
+
+// Initialize parameter fields
+updateParameters();
+</script>
+</body>
+</html>
