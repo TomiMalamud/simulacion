@@ -26,34 +26,39 @@ def generate_numbers():
         intervalos = int(content["intervalos"])
 
         if distribucion == "uniforme":
-            a = float(params.get("a", 0))  # Default a to 0 if not provided
-            b = float(params.get("b", 1))  # Default b to 1 if not provided
+            a = float(params.get("a", 0))  # Default a 0
+            b = float(params.get("b", 1))  # Default b 1
             if a >= b:
                 raise ValueError(
-                    "For a uniforme distribucion, 'a' must be less than 'b'."
+                    "Para distribución uniforme, 'a' debe ser menor a 'b'."
                 )
             data = np.random.uniform(a, b, n)
+            expected_freq = np.full(intervalos, n / intervalos)
         elif distribucion == "exponencial":
-            lambd = float(
-                params.get("lambda", 1)
-            )  # Default lambda to 1 if not provided
+            lambd = float(params.get("lambda", 1))  # Default lambda 1
             if lambd <= 0:
-                raise ValueError(
-                    "Lambda must be positive for exponential distribucion."
-                )
+                raise ValueError("Lambda debe ser positivo.")
             data = np.random.exponential(1 / lambd, n)
+            bin_edges = np.linspace(data.min(), data.max(), intervalos + 1)
+            cdf_values = stats.expon.cdf(bin_edges, scale=1/lambd)
+            expected_freq = np.diff(cdf_values) * n
+
         elif distribucion == "normal":
-            mu = float(params.get("mu", 0))  # Default mu to 0 if not provided
-            sigma = float(params.get("sigma", 1))  # Default sigma to 1 if not provided
+            mu = float(params.get("mu", 0))  # Default mu 0
+            sigma = float(params.get("sigma", 1))  # Default sigma 1
             if sigma <= 0:
-                raise ValueError("Sigma must be positive for normal distribucion.")
+                raise ValueError("Sigma debe ser positivo.")
             data = np.random.normal(mu, sigma, n)
+            bin_edges = np.linspace(data.min(), data.max(), intervalos + 1)
+            cdf_values = stats.norm.cdf(bin_edges, mu, sigma)
+            expected_freq = np.diff(cdf_values) * n
+            
         else:
-            raise ValueError("Unsupported distribucion type specified.")
+            raise ValueError("Error en la selección de tipo de distribución.")
 
         data = np.round(data, 4)
 
-        # Generate histogram
+        # Generar histograma
         fig, ax = plt.subplots()
         counts, bins, patches = ax.hist(
             data, bins=intervalos, color="blue", edgecolor="black"
@@ -62,15 +67,16 @@ def generate_numbers():
         ax.set_ylabel("Frecuencia")
         plt.title("Histograma")
 
-        # Convert plot to PNG image
+        # Gráfico a PNG
         img = io.BytesIO()
         plt.savefig(img, format="png")
         plt.close()
         img.seek(0)
         plot_url = base64.b64encode(img.getvalue()).decode("utf8")
+        expected_freq *= (counts.sum() / expected_freq.sum())
 
-        # Goodness-of-fit tests
-        chi2_stat, chi2_p = stats.chisquare(counts)
+        # Prueba de bondad de ajuste
+        chi2_stat, chi2_p = stats.chisquare(counts, f_exp=expected_freq)
         d_stat, ks_p = stats.kstest(data, "norm", args=(np.mean(data), np.std(data)))
 
         return jsonify(
@@ -80,11 +86,11 @@ def generate_numbers():
                 "chi_square_p": np.round(chi2_p, 4),
                 "kolmogorov_stat": np.round(d_stat, 4),
                 "kolmogorov_p": np.round(ks_p, 4),
-                "data": data.tolist(),  # Include the data series in the response
+                "data": data.tolist(),
             }
         )
     except Exception as e:
-        print(e)  # Print error message to stdout
+        print(e)
         return jsonify({"error": str(e)}), 500
 
 
