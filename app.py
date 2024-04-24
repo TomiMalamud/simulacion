@@ -46,8 +46,8 @@ def generate_numbers():
             lambd = float(params.get("lambda", 1))
             if lambd <= 0:
                 raise ValueError("Lambda debe ser positivo.")
-            data = np.random.exponential(1 / lambd, n)
             scale = 1/lambd
+            data = np.random.exponential(scale, n)
             upper_bound = stats.expon.ppf(0.99, scale=scale)  # 99th percentile
             bin_edges = np.linspace(0, upper_bound, intervalos + 1)
             cdf_values = stats.expon.cdf(bin_edges, scale=scale)
@@ -131,7 +131,9 @@ def generate_numbers():
             "bin_amplitude": np.round(bin_amplitude, 4),
             "mean": np.round(data_mean, 4),
             }        
+        print(data.tolist())
         return jsonify(result)
+        
 
     except ValueError as e:
         return jsonify({"error": str(e)}), 400  
