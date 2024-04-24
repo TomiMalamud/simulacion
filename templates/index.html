@@ -88,12 +88,12 @@
         </button>
       </form>
       <div id="loading" class="loader hidden" style="margin-top: 20px"></div>
+      <div id="results" class="hidden">
       <h3>Resultados</h3>
       <img
         id="histogram"
         src=""
-        alt="El histograma aparecerá acá."
-        class="img-fluid"
+        class="img-fluid hidden"
       />
       <p>
         Chi-cuadrado Estadístico: <span id="chiSquareStat"></span> (<span
@@ -109,12 +109,13 @@
         >)
       </p>
       <p>Kolmogorov-Smirnov P-Valor: <span id="kolmogorovP" class=""></span></p>
+    </div>
       <div id="summaryTable" class="hidden">
-        <h4>Summary Statistics for Exponential Distribution</h4>
+        <h4>Resumen de los números generados</h4>
         <table class="table">
           <tbody>
             <tr>
-              <td>N: Sample size</td>
+              <td>N: Tamaño de la muestra</td>
               <td id="tableSampleSize"></td>
             </tr>
             <tr>
@@ -126,24 +127,20 @@
               <td id="tableMax"></td>
             </tr>
             <tr>
-              <td>Range:</td>
+              <td>Rango:</td>
               <td id="tableRange"></td>
             </tr>
             <tr>
-              <td>Number of bins:</td>
+              <td>Cantidad de intervalos:</td>
               <td id="tableBins"></td>
             </tr>
             <tr>
-              <td>Bin amplitude:</td>
+              <td>Amplitud de intervalos:</td>
               <td id="tableAmplitude"></td>
             </tr>
             <tr>
-              <td>Mean:</td>
+              <td>Media:</td>
               <td id="tableMean"></td>
-            </tr>
-            <tr>
-              <td>Lambda:</td>
-              <td id="tableLambda"></td>
             </tr>
           </tbody>
         </table>
@@ -259,19 +256,16 @@
               $("#loading").addClass("hidden");
               updateTable(response.data);
               $("#dataViewer").removeClass("hidden");
-              if (distribucion === "exponencial") {
-                $("#tableSampleSize").text(response.extra_stats.sample_size);
-                $("#tableMin").text(response.extra_stats.min);
-                $("#tableMax").text(response.extra_stats.max);
-                $("#tableRange").text(response.extra_stats.range);
-                $("#tableBins").text(response.extra_stats.number_of_bins);
-                $("#tableAmplitude").text(response.extra_stats.bin_amplitude);
-                $("#tableMean").text(response.extra_stats.mean);
-                $("#tableLambda").text(response.extra_stats.lambda);
-                $("#summaryTable").removeClass("hidden");
-              } else {
-                $("#summaryTable").addClass("hidden");
-              }
+              $("#results").removeClass("hidden");
+              $("#histogram").removeClass("hidden");              
+              $("#tableSampleSize").text(response.sample_size);
+              $("#tableMin").text(response.min);
+              $("#tableMax").text(response.max);
+              $("#tableRange").text(response.range);
+              $("#tableBins").text(response.number_of_bins);
+              $("#tableAmplitude").text(response.bin_amplitude);
+              $("#tableMean").text(response.mean);
+              $("#summaryTable").removeClass("hidden");
             }
           },
           error: function (xhr, textStatus, errorThrown) {

@@ -13,6 +13,17 @@ app = Flask(__name__)
 def index():
     return render_template("index.html")
 
+def manual_chi_square(o, e):
+    """
+    Manually compute the Chi-Squared test statistic.
+    o: observed frequencies (counts from histogram)
+    e: expected frequencies
+    """
+    if any(f < 5 for f in e):  # Chi-squared test requirement
+        raise ValueError("All expected frequencies must be at least 5")
+    chi2 = np.sum((o - e) ** 2 / e)
+    return chi2
+
 @app.route("/generate", methods=["POST"])
 def generate_numbers():
     print("Petición requisido:", request.json)
@@ -41,14 +52,6 @@ def generate_numbers():
             bin_edges = np.linspace(0, upper_bound, intervalos + 1)
             cdf_values = stats.expon.cdf(bin_edges, scale=scale)
             expected_freq = np.diff(cdf_values) * n
-            data_min = np.min(data)
-            data_max = np.max(data)
-            data_range = data_max - data_min
-            num_bins = int(np.sqrt(n)) + 1  # Calculating number of bins as per your formula
-            bin_amplitude = data_range / num_bins
-            data_mean = np.mean(data)
-            data_lambda = 1 / data_mean
-
         elif distribucion == "normal":
             mu = float(params.get("mu", 0))
             sigma = float(params.get("sigma", 1))
@@ -72,7 +75,7 @@ def generate_numbers():
         ax.set_ylabel("Frequency")
         plt.title("Histogram")
 
-        # Plot a PNG
+        # Histograma a PNG
         img = io.BytesIO()
         plt.savefig(img, format="png")
         plt.close()
@@ -83,8 +86,19 @@ def generate_numbers():
         expected_freq *= (counts.sum() / expected_freq.sum())
 
         # Prueba de bondad de ajuste
-        chi2_stat, chi2_p = stats.chisquare(counts, f_exp=expected_freq)
-        
+        try:
+            chi2_stat = manual_chi_square(counts, expected_freq)
+            chi2_p = 1 - stats.chi2.cdf(chi2_stat, df=len(counts) - 1 - len(params))
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+
+        chi2_stat_scipy, chi2_p_scipy = stats.chisquare(counts, f_exp=expected_freq)
+
+        # Print both statistics for comparison
+        print("Manual Chi-Squared Statistic:", chi2_stat)
+        print("Scipy Chi-Squared Statistic:", chi2_stat_scipy)
+
+
         # Parametrización de KS basado en la distribución
         if distribucion == "uniforme":
             ks_stat, ks_p = stats.kstest(data, 'uniform', args=(a, b-a))
@@ -94,6 +108,14 @@ def generate_numbers():
             ks_stat, ks_p = stats.kstest(data, 'norm', args=(mu, sigma))
         else:
             ks_stat, ks_p = None, None  # Default or error handling case
+
+        data_min = np.min(data)
+        data_max = np.max(data)
+        data_range = data_max - data_min
+        num_bins = int(np.sqrt(n)) + 1
+        bin_amplitude = data_range / num_bins
+        data_mean = np.mean(data)        
+        
         result = {
             "histogram": "data:image/png;base64,{}".format(plot_url),
             "chi_square_stat": np.round(chi2_stat, 4),
@@ -101,31 +123,16 @@ def generate_numbers():
             "kolmogorov_stat": np.round(ks_stat, 4),
             "kolmogorov_p": np.round(ks_p, 4),
             "data": data.tolist(),
-        }
-        # Additional statistics for exponential distribution
-        if distribucion == "exponencial":
-            data_min = np.min(data)
-            data_max = np.max(data)
-            data_range = data_max - data_min
-            num_bins = int(np.sqrt(n)) + 1
-            bin_amplitude = data_range / num_bins
-            data_mean = np.mean(data)
-            data_lambda = 1 / data_mean
-
-            extra_stats = {
-                "sample_size": n,
-                "min": np.round(data_min, 4),
-                "max": np.round(data_max, 4),
-                "range": np.round(data_range, 4),
-                "number_of_bins": num_bins,
-                "bin_amplitude": np.round(bin_amplitude, 4),
-                "mean": np.round(data_mean, 4),
-                "lambda": np.round(data_lambda, 4)
-            }
-            result.update({"extra_stats": extra_stats})
-
+            "sample_size": n,
+            "min": np.round(data_min, 4),
+            "max": np.round(data_max, 4),
+            "range": np.round(data_range, 4),
+            "number_of_bins": num_bins,
+            "bin_amplitude": np.round(bin_amplitude, 4),
+            "mean": np.round(data_mean, 4),
+            }        
         return jsonify(result)
-    
+
     except ValueError as e:
         return jsonify({"error": str(e)}), 400  
 
