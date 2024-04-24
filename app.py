@@ -15,7 +15,7 @@ def index():
 
 @app.route("/generate", methods=["POST"])
 def generate_numbers():
-    print("Request received:", request.json)
+    print("Petición requisido:", request.json)
     try:
         content = request.json
         n = int(content["muestra"])
@@ -27,25 +27,33 @@ def generate_numbers():
             a = float(params.get("a", 0))
             b = float(params.get("b", 1))
             if a >= b:
-                raise ValueError("For a uniform distribution, 'a' must be less than 'b'.")
+                raise ValueError("'a' debe ser menor a 'b'.")
             data = np.random.uniform(a, b, n)
             expected_freq = np.full(intervalos, n / intervalos)
             bin_edges = np.linspace(a, b, intervalos + 1)
         elif distribucion == "exponencial":
             lambd = float(params.get("lambda", 1))
             if lambd <= 0:
-                raise ValueError("Lambda must be positive.")
+                raise ValueError("Lambda debe ser positivo.")
             data = np.random.exponential(1 / lambd, n)
             scale = 1/lambd
             upper_bound = stats.expon.ppf(0.99, scale=scale)  # 99th percentile
             bin_edges = np.linspace(0, upper_bound, intervalos + 1)
             cdf_values = stats.expon.cdf(bin_edges, scale=scale)
             expected_freq = np.diff(cdf_values) * n
+            data_min = np.min(data)
+            data_max = np.max(data)
+            data_range = data_max - data_min
+            num_bins = int(np.sqrt(n)) + 1  # Calculating number of bins as per your formula
+            bin_amplitude = data_range / num_bins
+            data_mean = np.mean(data)
+            data_lambda = 1 / data_mean
+
         elif distribucion == "normal":
             mu = float(params.get("mu", 0))
             sigma = float(params.get("sigma", 1))
             if sigma <= 0:
-                raise ValueError("Sigma must be positive.")
+                raise ValueError("Sigma debe ser positivo.")
             data = np.random.normal(mu, sigma, n)
             lower_bound = stats.norm.ppf(0.005, mu, sigma)  
             upper_bound = stats.norm.ppf(0.995, mu, sigma)  
@@ -53,7 +61,7 @@ def generate_numbers():
             cdf_values = stats.norm.cdf(bin_edges, mu, sigma)
             expected_freq = np.diff(cdf_values) * n
         else:
-            raise ValueError("Invalid distribution type selected.")
+            raise ValueError("El tipo de distribución seleccionado tiene un error.")
 
         data = np.round(data, 4)
 
@@ -84,15 +92,43 @@ def generate_numbers():
             ks_stat, ks_p = stats.kstest(data, 'expon', args=(0, 1/lambd))
         elif distribucion == "normal":
             ks_stat, ks_p = stats.kstest(data, 'norm', args=(mu, sigma))
-
-        return jsonify({
+        else:
+            ks_stat, ks_p = None, None  # Default or error handling case
+        result = {
             "histogram": "data:image/png;base64,{}".format(plot_url),
             "chi_square_stat": np.round(chi2_stat, 4),
             "chi_square_p": np.round(chi2_p, 4),
             "kolmogorov_stat": np.round(ks_stat, 4),
             "kolmogorov_p": np.round(ks_p, 4),
             "data": data.tolist(),
-        })
+        }
+        # Additional statistics for exponential distribution
+        if distribucion == "exponencial":
+            data_min = np.min(data)
+            data_max = np.max(data)
+            data_range = data_max - data_min
+            num_bins = int(np.sqrt(n)) + 1
+            bin_amplitude = data_range / num_bins
+            data_mean = np.mean(data)
+            data_lambda = 1 / data_mean
+
+            extra_stats = {
+                "sample_size": n,
+                "min": np.round(data_min, 4),
+                "max": np.round(data_max, 4),
+                "range": np.round(data_range, 4),
+                "number_of_bins": num_bins,
+                "bin_amplitude": np.round(bin_amplitude, 4),
+                "mean": np.round(data_mean, 4),
+                "lambda": np.round(data_lambda, 4)
+            }
+            result.update({"extra_stats": extra_stats})
+
+        return jsonify(result)
+    
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400  
+
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)}), 500

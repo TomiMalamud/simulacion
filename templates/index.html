@@ -32,11 +32,21 @@
       .hidden {
         display: none;
       }
+      .significant {
+        color: red;
+      }
+      .not-significant {
+        color: green;
+      }
     </style>
   </head>
   <body>
     <div class="container">
       <h2>Generador de Números Aleatorios</h2>
+      <p>
+        Seleccione una distribución y parámetros para definir la hipótesis nula
+        (H0) de cómo se distribuyen los datos generados.
+      </p>
       <form id="dataForm">
         <div class="form-group">
           <label for="sampleSize">Tamaño de Muestra (N):</label>
@@ -85,10 +95,59 @@
         alt="El histograma aparecerá acá."
         class="img-fluid"
       />
-      <p>Chi-cuadrado Estadístico: <span id="chiSquareStat"></span></p>
-      <p>Chi-cuadrado P-Valor: <span id="chiSquareP"></span></p>
-      <p>Kolmogorov-Smirnov Estadístico: <span id="kolmogorovStat"></span></p>
-      <p>Kolmogorov-Smirnov P-Valor: <span id="kolmogorovP"></span></p>
+      <p>
+        Chi-cuadrado Estadístico: <span id="chiSquareStat"></span> (<span
+          id="chiResult"
+        ></span
+        >)
+      </p>
+      <p>Chi-cuadrado P-Valor: <span id="chiSquareP" class=""></span></p>
+      <p>
+        Kolmogorov-Smirnov Estadístico: <span id="kolmogorovStat"></span> (<span
+          id="ksResult"
+        ></span
+        >)
+      </p>
+      <p>Kolmogorov-Smirnov P-Valor: <span id="kolmogorovP" class=""></span></p>
+      <div id="summaryTable" class="hidden">
+        <h4>Summary Statistics for Exponential Distribution</h4>
+        <table class="table">
+          <tbody>
+            <tr>
+              <td>N: Sample size</td>
+              <td id="tableSampleSize"></td>
+            </tr>
+            <tr>
+              <td>Min:</td>
+              <td id="tableMin"></td>
+            </tr>
+            <tr>
+              <td>Max:</td>
+              <td id="tableMax"></td>
+            </tr>
+            <tr>
+              <td>Range:</td>
+              <td id="tableRange"></td>
+            </tr>
+            <tr>
+              <td>Number of bins:</td>
+              <td id="tableBins"></td>
+            </tr>
+            <tr>
+              <td>Bin amplitude:</td>
+              <td id="tableAmplitude"></td>
+            </tr>
+            <tr>
+              <td>Mean:</td>
+              <td id="tableMean"></td>
+            </tr>
+            <tr>
+              <td>Lambda:</td>
+              <td id="tableLambda"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       <div id="dataViewer" class="hidden">
         <h4>Números Generados</h4>
         <table class="table table-striped">
@@ -126,15 +185,15 @@
         var paramsHTML = "";
         if (distribucion === "uniforme") {
           paramsHTML =
-            '<div class="form-group"><label for="param1">a (Límite inferior):</label><input type="text" id="param1" value="0" class="form-control"></div>' +
-            '<div class="form-group"><label for="param2">b (Límite superior):</label><input type="text" id="param2" value="1" class="form-control"></div>';
+            '<div class="form-group"><label for="param1">a (Límite inferior):</label><input type="number" id="param1" value="0" class="form-control"></div>' +
+            '<div class="form-group"><label for="param2">b (Límite superior):</label><input type="number" id="param2" value="1" class="form-control"></div>';
         } else if (distribucion === "exponencial") {
           paramsHTML =
-            '<div class="form-group"><label for="param1">Lambda (λ):</label><input type="text" id="param1" value="1" class="form-control"></div>';
+            '<div class="form-group"><label for="param1">Lambda (λ):</label><input type="number" id="param1" value="1" class="form-control"></div>';
         } else if (distribucion === "normal") {
           paramsHTML =
-            '<div class="form-group"><label for="param1">Mu (μ, Media):</label><input type="text" id="param1" value="0" class="form-control"></div>' +
-            '<div class="form-group"><label for="param2">Sigma (σ, Desviación Estándar):</label><input type="text" id="param2" value="1" class="form-control"></div>';
+            '<div class="form-group"><label for="param1">Mu (μ, Media):</label><input type="number" id="param1" value="0" class="form-control"></div>' +
+            '<div class="form-group"><label for="param2">Sigma (σ, Desviación Estándar):</label><input type="number" id="param2" value="1" class="form-control"></div>';
         }
         $("#params").html(paramsHTML);
       }
@@ -166,17 +225,57 @@
             intervalos: numBins
           }),
           success: function (response) {
-            $("#histogram").attr("src", response.histogram);
-            $("#chiSquareStat").text(response.chi_square_stat);
-            $("#chiSquareP").text(response.chi_square_p);
-            $("#kolmogorovStat").text(response.kolmogorov_stat);
-            $("#kolmogorovP").text(response.kolmogorov_p);
-            $("#loading").addClass("hidden");
-            updateTable(response.data);
-            $("#dataViewer").removeClass("hidden");
+            if (response.error) {
+              alert(response.error); // Show error if there is an error field in response
+              $("#loading").addClass("hidden");
+            } else {
+              $("#histogram").attr("src", response.histogram);
+              $("#chiSquareStat").text(response.chi_square_stat);
+              $("#chiSquareP").text(response.chi_square_p);
+              $("#kolmogorovStat").text(response.kolmogorov_stat);
+              $("#kolmogorovP").text(response.kolmogorov_p);
+              $("#chiResult")
+                .text(
+                  response.chi_square_p < 0.05
+                    ? "Rechazar H0"
+                    : "No rechazar H0"
+                )
+                .addClass(
+                  response.chi_square_p < 0.05
+                    ? "significant"
+                    : "not-significant"
+                );
+              $("#ksResult")
+                .text(
+                  response.kolmogorov_p < 0.05
+                    ? "Rechazar H0"
+                    : "No rechazar H0"
+                )
+                .addClass(
+                  response.kolmogorov_p < 0.05
+                    ? "significant"
+                    : "not-significant"
+                );
+              $("#loading").addClass("hidden");
+              updateTable(response.data);
+              $("#dataViewer").removeClass("hidden");
+              if (distribucion === "exponencial") {
+                $("#tableSampleSize").text(response.extra_stats.sample_size);
+                $("#tableMin").text(response.extra_stats.min);
+                $("#tableMax").text(response.extra_stats.max);
+                $("#tableRange").text(response.extra_stats.range);
+                $("#tableBins").text(response.extra_stats.number_of_bins);
+                $("#tableAmplitude").text(response.extra_stats.bin_amplitude);
+                $("#tableMean").text(response.extra_stats.mean);
+                $("#tableLambda").text(response.extra_stats.lambda);
+                $("#summaryTable").removeClass("hidden");
+              } else {
+                $("#summaryTable").addClass("hidden");
+              }
+            }
           },
-          error: function () {
-            alert("Error al procesar la solicitud.");
+          error: function (xhr, textStatus, errorThrown) {
+            alert("Hubo un error: " + xhr.responseText);
             $("#loading").addClass("hidden");
           }
         });
