@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import matplotlib
 import io
 import base64
+import random
+import math
 
 matplotlib.use("Agg")
 app = Flask(__name__)
@@ -24,6 +26,41 @@ def manual_chi_square(o, e):
     chi2 = np.sum((o - e) ** 2 / e)
     return chi2
 
+# Funciones para generar los datos aleatorios de las diferentes distriibuciones...
+
+def uniform_generator(a, b, n):
+    numeros_aleatorios = []
+    for i in range(n):
+        numero_aleatorio = a + random.random() * (b - a)
+        numeros_aleatorios.append(numero_aleatorio)
+    return numeros_aleatorios
+
+
+def exponential_generator(scale, n):
+    numeros_aleatorios = []
+    for i in range(n):
+        num_random = random.random()
+        numero_aleatorio = -scale * math.log(1 - num_random)
+        numeros_aleatorios.append(numero_aleatorio)
+    return numeros_aleatorios
+
+
+def normal_generator(mu, sigma, n):
+    numeros_aleatorios = []
+
+    while len(numeros_aleatorios) < n:
+        numero_aleatorio1 = random.random()
+        numero_aleatorio2 = random.random()
+
+        normal1 = (math.sqrt(-2*math.log(numero_aleatorio1)) * math.cos(2*math.pi*numero_aleatorio2)) * sigma + mu
+        normal2 = (math.sqrt(-2*math.log(numero_aleatorio2)) * math.cos(2*math.pi*numero_aleatorio1)) * sigma + mu
+        
+        numeros_aleatorios.append(normal1)
+        numeros_aleatorios.append(normal2)
+    
+    return numeros_aleatorios
+
+
 @app.route("/generate", methods=["POST"])
 def generate_numbers():
     print("Petición requisido:", request.json)
@@ -39,25 +76,33 @@ def generate_numbers():
             b = float(params.get("b", 1))
             if a >= b:
                 raise ValueError("'a' debe ser menor a 'b'.")
-            data = np.random.uniform(a, b, n)
+            
+            # Generación variables aleatorias uniformes...
+            data = uniform_generator(a, b, n)
             expected_freq = np.full(intervalos, n / intervalos)
             bin_edges = np.linspace(a, b, intervalos + 1)
+
         elif distribucion == "exponencial":
             lambd = float(params.get("lambda", 1))
             if lambd <= 0:
                 raise ValueError("Lambda debe ser positivo.")
             scale = 1/lambd
-            data = np.random.exponential(scale, n)
+
+            # Generar variables aleatorias exponenciales negativas...
+            data = exponential_generator(scale, n)
             upper_bound = stats.expon.ppf(0.99, scale=scale)  # 99th percentile
             bin_edges = np.linspace(0, upper_bound, intervalos + 1)
             cdf_values = stats.expon.cdf(bin_edges, scale=scale)
             expected_freq = np.diff(cdf_values) * n
+
         elif distribucion == "normal":
             mu = float(params.get("mu", 0))
             sigma = float(params.get("sigma", 1))
             if sigma <= 0:
                 raise ValueError("Sigma debe ser positivo.")
-            data = np.random.normal(mu, sigma, n)
+            
+            # Generar variables aleatorias normales...
+            data = normal_generator(mu, sigma, n)
             lower_bound = stats.norm.ppf(0.005, mu, sigma)  
             upper_bound = stats.norm.ppf(0.995, mu, sigma)  
             bin_edges = np.linspace(lower_bound, upper_bound, intervalos + 1)
