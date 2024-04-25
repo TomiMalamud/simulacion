@@ -15,7 +15,7 @@ app = Flask(__name__)
 def index():
     return render_template("index.html")
 
-ks_critical_values = {
+ks_critical_values = { 
     1: 0.975, 2: 0.842, 3: 0.708, 4: 0.624, 5: 0.563, 6: 0.521, 7: 0.486,
     8: 0.457, 9: 0.432, 10: 0.410, 11: 0.391, 12: 0.375, 13: 0.361, 14: 0.349,
     15: 0.338, 16: 0.328, 17: 0.318, 18: 0.309, 19: 0.301, 20: 0.294, 21: 0.287,
@@ -260,9 +260,9 @@ def generate_numbers():
         # Generar histograma
         fig, ax = plt.subplots()
         counts, bins, patches = ax.hist(data, bins=bin_edges, color="blue", edgecolor="black")
-        ax.set_xlabel("Value")
-        ax.set_ylabel("Frequency")
-        plt.title("Histogram")
+        ax.set_xlabel("Valor")
+        ax.set_ylabel("Frequencia")
+        plt.title("Histograma")
 
         # Histograma a PNG
         img = io.BytesIO()

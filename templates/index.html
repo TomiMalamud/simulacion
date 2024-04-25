@@ -44,7 +44,7 @@
     <div class="container w-75">
       <h2 class="text-center">Generador de Números Aleatorios</h2>
       <p class="text-center text-secondary">
-        Seleccione una distribución y parámetros para definir la hipótesis nula
+        Seleccioná una distribución y parámetros para definir la hipótesis nula
         (H0) de cómo se distribuyen los datos generados.
       </p>
       <form id="dataForm" class="row">
@@ -74,25 +74,26 @@
             </div>
             <div id="params" class="form-group"></div>            
         </div>
+        <div class="col-12">
         <button type="button" class="btn w-100 btn-primary " onclick="generarNumeros()">
           Generar
-      </button>
+      </button> </div>
     </form>
     
       <div id="loading" class="loader hidden" style="margin-top: 20px"></div>
-      <div id="results" class="hidden">
+      <div id="results" class="hidden pt-5">
         <h3>Resultados</h3>
         <img id="histogram" src="" class="img-fluid hidden" />
         <p>
-          Chi-cuadrado Calculado: <span id="chiSquareStat"></span> < Valor Tabulado: <span id="chiCritical"></span>
+          Chi-cuadrado Calculado: <span style="font-weight:bold" id="chiSquareStat"></span> < Valor Tabulado: <span style="font-weight:bold" id="chiCritical"></span>
           <span id="chiResult" class="significant"></span>
         </p>
         <p>
-          Kolmogorov-Smirnov Calculado: <span id="kolmogorovStat"></span> < Valor Tabulado: <span id="ksCritical"></span>
+          Kolmogorov-Smirnov Calculado: <span style="font-weight:bold" id="kolmogorovStat"></span> < Valor Tabulado: <span style="font-weight:bold" id="ksCritical"></span>
           <span id="ksResult" class="significant"></span>
         </p>
             </div>
-      <div id="summaryTable" class="hidden">
+      <div id="summaryTable" class="hidden pt-5">
         <h4>Resumen de los números generados</h4>
         <table class="table">
           <tbody>
@@ -127,7 +128,7 @@
           </tbody>
         </table>
       </div>
-      <div id="dataViewer" class="hidden">
+      <div id="dataViewer" class="hidden pt-5">
         <h4>Números Generados</h4>
         <table class="table table-striped">
           <thead>
@@ -295,11 +296,11 @@
       
         // Determine the result for Kolmogorov-Smirnov test
         if (ksCalculated > ksTabulated) {
-          $("#ksResult").text(" (No se puede rechazar la hipótesis nula H0)");
+          $("#ksResult").text(" (Rechazar H0)");
           $("#ksResult").addClass("significant");
           $("#ksResult").removeClass("not-significant");
         } else {
-          $("#ksResult").text(" (No rechazar H0)");
+          $("#ksResult").text(" (No se puede rechazar la hipótesis nula H0)");
           $("#ksResult").addClass("not-significant");
           $("#ksResult").removeClass("significant");
         }
