@@ -294,6 +294,22 @@ def generate_numbers():
         ksCalculadoGPT= ks_statistic(counts, frecuenciasEsperadas)        
         print(ksCalculado, ksCalculadoGPT)
         
+        c_values = (frecuenciasEsperadas - counts)**2 / frecuenciasEsperadas
+        c_ac_values = np.cumsum(c_values)
+    
+        # Build rows for the Chi-squared table
+        chi_squared_table = []
+        for i in range(len(bin_edges) - 1):
+            row = {
+                "lower_limit": bin_edges[i],
+                "upper_limit": bin_edges[i+1],
+                "fo": counts[i],
+                "fe": frecuenciasEsperadas[i],
+                "c": c_values[i],
+                "c_ac": c_ac_values[i]
+            }
+            chi_squared_table.append(row)
+
 
         data_min = np.min(data)
         data_max = np.max(data)
@@ -316,6 +332,7 @@ def generate_numbers():
             "mean": np.round(data_mean, 4),
             "chi_critical": np.round(chi_critical, 4),
             "ks_critical": np.round(ks_critical, 4),
+            "chi_squared_table": chi_squared_table
             }        
 
         return jsonify(result)
