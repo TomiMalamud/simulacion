@@ -21,8 +21,9 @@ def manual_chi_square(o, e):
     o: observed frequencies (counts from histogram)
     e: expected frequencies
     """
-    if any(f < 5 for f in e):  # Chi-squared test requirement
-        raise ValueError("All expected frequencies must be at least 5")
+#    if any(f < 5 for f in e):  # Chi-squared test requirement
+        
+#        raise ValueError("All expected frequencies must be at least 5")
     chi2 = np.sum((o - e) ** 2 / e)
     return chi2
 
@@ -61,6 +62,24 @@ def normal_generator(mu, sigma, n):
     return numeros_aleatorios
 
 
+def calcularProbObservadas(frecuencias, n):
+    probFrecObservadas = np.array(list(map(lambda x: x / n, frecuencias)))
+    probFrecObsAc = []
+    acumulador = 0
+    for i in range(len(probFrecObservadas)):
+        acumulador += probFrecObservadas[i]
+        probFrecObsAc.append(acumulador)
+    return probFrecObsAc
+
+
+def calcularKs(probfrecObsAc, probfrecEspAc):
+    probfrecObsAc = np.array(probfrecObsAc)
+    probfrecEspAc = np.array(probfrecEspAc)
+    ksCalculado = np.max(np.abs(probfrecObsAc - probfrecEspAc))
+    return ksCalculado
+
+
+
 @app.route("/generate", methods=["POST"])
 def generate_numbers():
     print("Petición requisido:", request.json)
@@ -79,7 +98,18 @@ def generate_numbers():
             
             # Generación variables aleatorias uniformes...
             data = uniform_generator(a, b, n)
-            expected_freq = np.full(intervalos, n / intervalos)
+            #Calcular las frecuencias esperadas de los intervalos
+            frecuenciasEsperadas = np.full(intervalos, n / intervalos)
+            probFrecuenciasEsp = np.array(list(map(lambda x: x / n, frecuenciasEsperadas)))
+            
+            # Crear array con las probabilidades esperadas acumuladas
+            probFrecuenciasEspAc = []
+            acumulador = 0
+            for i in range(len(probFrecuenciasEsp)):
+                acumulador += probFrecuenciasEsp[i]
+                probFrecuenciasEspAc.append(acumulador)
+
+
             bin_edges = np.linspace(a, b, intervalos + 1)
 
         elif distribucion == "exponencial":
@@ -92,8 +122,13 @@ def generate_numbers():
             data = exponential_generator(scale, n)
             upper_bound = stats.expon.ppf(0.99, scale=scale)  # 99th percentile
             bin_edges = np.linspace(0, upper_bound, intervalos + 1)
-            cdf_values = stats.expon.cdf(bin_edges, scale=scale)
-            expected_freq = np.diff(cdf_values) * n
+
+            # Calcular la probabilidad acumulativa de cada uno de los intervalos...
+            probFrecuenciasEspAc = stats.expon.cdf(bin_edges, scale=scale)
+            # Calcular frecuencias esperadas de cada intervalo...
+            # Diff crea un array con las diferencias entre elementos consecutivos de un array... 
+            probFrecuenciasEsp = np.diff(probFrecuenciasEspAc)
+            frecuenciasEsperadas = probFrecuenciasEsp * n
 
         elif distribucion == "normal":
             mu = float(params.get("mu", 0))
@@ -103,11 +138,13 @@ def generate_numbers():
             
             # Generar variables aleatorias normales...
             data = normal_generator(mu, sigma, n)
+
             lower_bound = stats.norm.ppf(0.005, mu, sigma)  
             upper_bound = stats.norm.ppf(0.995, mu, sigma)  
             bin_edges = np.linspace(lower_bound, upper_bound, intervalos + 1)
-            cdf_values = stats.norm.cdf(bin_edges, mu, sigma)
-            expected_freq = np.diff(cdf_values) * n
+            probFrecuenciasEspAc = stats.norm.cdf(bin_edges, mu, sigma)
+            probFrecuenciasEsp = np.diff(probFrecuenciasEspAc)
+            frecuenciasEsperadas = probFrecuenciasEsp * n
         else:
             raise ValueError("El tipo de distribución seleccionado tiene un error.")
 
@@ -116,6 +153,8 @@ def generate_numbers():
         # Generar histograma
         fig, ax = plt.subplots()
         counts, bins, patches = ax.hist(data, bins=bin_edges, color="blue", edgecolor="black")
+        print("Length of counts:", len(counts))
+        print("Counts:", counts)
         ax.set_xlabel("Value")
         ax.set_ylabel("Frequency")
         plt.title("Histogram")
@@ -128,31 +167,28 @@ def generate_numbers():
         plot_url = base64.b64encode(img.getvalue()).decode("utf8")
 
         # Ajuste de Frecuencias esperadas para coincidir frecuencia observada
-        expected_freq *= (counts.sum() / expected_freq.sum())
+        frecuenciasEsperadas *= (counts.sum() / frecuenciasEsperadas.sum())
 
         # Prueba de bondad de ajuste
         try:
-            chi2_stat = manual_chi_square(counts, expected_freq)
+            chi2_stat = manual_chi_square(counts, frecuenciasEsperadas)
             chi2_p = 1 - stats.chi2.cdf(chi2_stat, df=len(counts) - 1 - len(params))
         except ValueError as e:
             return jsonify({"error": str(e)}), 400
 
-        chi2_stat_scipy, chi2_p_scipy = stats.chisquare(counts, f_exp=expected_freq)
+        chi2_stat_scipy, chi2_p_scipy = stats.chisquare(counts, f_exp=frecuenciasEsperadas)
 
         # Print both statistics for comparison
         print("Manual Chi-Squared Statistic:", chi2_stat)
         print("Scipy Chi-Squared Statistic:", chi2_stat_scipy)
 
 
-        # Parametrización de KS basado en la distribución
-        if distribucion == "uniforme":
-            ks_stat, ks_p = stats.kstest(data, 'uniform', args=(a, b-a))
-        elif distribucion == "exponencial":
-            ks_stat, ks_p = stats.kstest(data, 'expon', args=(0, 1/lambd))
-        elif distribucion == "normal":
-            ks_stat, ks_p = stats.kstest(data, 'norm', args=(mu, sigma))
-        else:
-            ks_stat, ks_p = None, None  # Default or error handling case
+        # Calcular Ks..
+        probFrecuenciasObsAc = calcularProbObservadas(counts, n)
+        ksCalculado = calcularKs(probFrecuenciasObsAc,probFrecuenciasEspAc)
+
+        # Para un nivel de aceptación de 0.95, el ks tabulado es el siguiente...
+        ksTabulado = 1.36 / math.sqrt(n)
 
         data_min = np.min(data)
         data_max = np.max(data)
@@ -164,9 +200,9 @@ def generate_numbers():
         result = {
             "histogram": "data:image/png;base64,{}".format(plot_url),
             "chi_square_stat": np.round(chi2_stat, 4),
-            "chi_square_p": np.round(chi2_p, 4),
-            "kolmogorov_stat": np.round(ks_stat, 4),
-            "kolmogorov_p": np.round(ks_p, 4),
+            "#chi_square_p": np.round(chi2_p, 4),
+            "kolmogorovStat": np.round(ksCalculado, 4),
+            "kolmogorovP": np.round(ksTabulado, 4),
             "data": data.tolist(),
             "sample_size": n,
             "min": np.round(data_min, 4),
