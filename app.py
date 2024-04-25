@@ -72,10 +72,13 @@ def calcularProbObservadas(frecuencias, n):
     return probFrecObsAc
 
 
-def calcularKs(probfrecObsAc, probfrecEspAc):
+def calcularKs(probfrecObsAc, probfrecEspAc, distribucion):
     probfrecObsAc = np.array(probfrecObsAc)
     probfrecEspAc = np.array(probfrecEspAc)
-    ksCalculado = np.max(np.abs(probfrecObsAc - probfrecEspAc))
+    if distribucion == "normal" or distribucion == "exponencial":
+        ksCalculado = np.max(np.abs(probfrecObsAc - probfrecEspAc[:-1]))
+    else:
+        ksCalculado = np.max(np.abs(probfrecObsAc - probfrecEspAc))
     return ksCalculado
 
 
@@ -185,7 +188,7 @@ def generate_numbers():
 
         # Calcular Ks..
         probFrecuenciasObsAc = calcularProbObservadas(counts, n)
-        ksCalculado = calcularKs(probFrecuenciasObsAc,probFrecuenciasEspAc)
+        ksCalculado = calcularKs(probFrecuenciasObsAc,probFrecuenciasEspAc, distribucion)
 
         # Para un nivel de aceptación de 0.95, el ks tabulado es el siguiente...
         ksTabulado = 1.36 / math.sqrt(n)
