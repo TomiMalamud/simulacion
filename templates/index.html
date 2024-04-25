@@ -229,11 +229,11 @@
               $("#histogram").attr("src", response.histogram);
               $("#chiSquareStat").text(response.chi_square_stat);
               $("#chiSquareP").text(response.chi_square_p);
-              $("#kolmogorovStat").text(response.kolmogorov_stat);
-              $("#kolmogorovP").text(response.kolmogorov_p);
+              $("#kolmogorovStat").text(response.kolmogorovStat);
+              $("#kolmogorovP").text(response.kolmogorovP);
               $("#chiResult")
                 .text(
-                  response.chi_square_p < 0.05
+                  response.chi_Square_P < 0.05
                     ? "Rechazar H0"
                     : "No rechazar H0"
                 )
@@ -244,12 +244,12 @@
                 );
               $("#ksResult")
                 .text(
-                  response.kolmogorov_p < 0.05
+                  response.kolmogorovP < 0.05
                     ? "Rechazar H0"
                     : "No rechazar H0"
                 )
                 .addClass(
-                  response.kolmogorov_p < 0.05
+                  response.kolmogorovP < 0.05
                     ? "significant"
                     : "not-significant"
                 );
