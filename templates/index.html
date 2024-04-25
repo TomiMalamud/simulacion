@@ -10,7 +10,7 @@
     />
     <style>
       body {
-        padding: 20px;
+        padding: 100px;
       }
       .loader,
       .pagination-loader {
@@ -41,75 +41,57 @@
     </style>
   </head>
   <body>
-    <div class="container">
-      <h2>Generador de Números Aleatorios</h2>
-      <p>
+    <div class="container w-75">
+      <h2 class="text-center">Generador de Números Aleatorios</h2>
+      <p class="text-center text-secondary">
         Seleccione una distribución y parámetros para definir la hipótesis nula
         (H0) de cómo se distribuyen los datos generados.
       </p>
-      <form id="dataForm">
-        <div class="form-group">
-          <label for="sampleSize">Tamaño de Muestra (N):</label>
-          <input
-            type="number"
-            id="sampleSize"
-            value="1000"
-            class="form-control"
-          />
+      <form id="dataForm" class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="sampleSize">Tamaño de Muestra (N)</label>
+                <input type="number" id="sampleSize" value="1000" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label for="numBins">Cantidad de intervalos</label>
+                <select id="numBins" class="form-control">
+                    <option value="10">10</option>
+                    <option value="12">12</option>
+                    <option value="16">16</option>
+                    <option value="23">23</option>
+                </select>
+            </div>
         </div>
-        <div class="form-group">
-          <label for="distribucion">Distribución:</label>
-          <select
-            id="distribucion"
-            class="form-control"
-            onchange="updateParameters();"
-          >
-            <option value="uniforme">Uniforme</option>
-            <option value="exponencial">Exponencial</option>
-            <option value="normal">Normal</option>
-          </select>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="distribucion">Distribución</label>
+                <select id="distribucion" class="form-control" onchange="updateParameters();">
+                    <option value="uniforme">Uniforme</option>
+                    <option value="exponencial">Exponencial</option>
+                    <option value="normal">Normal</option>
+                </select>
+            </div>
+            <div id="params" class="form-group"></div>            
         </div>
-        <div id="params"></div>
-        <div class="form-group">
-          <label for="numBins">Cantidad de intervalos:</label>
-          <select id="numBins" class="form-control">
-            <option value="10">10</option>
-            <option value="12">12</option>
-            <option value="16">16</option>
-            <option value="23">23</option>
-          </select>
-        </div>
-        <button
-          type="button"
-          class="btn btn-primary"
-          onclick="generarNumeros()"
-        >
+        <button type="button" class="btn w-100 btn-primary " onclick="generarNumeros()">
           Generar
-        </button>
-      </form>
+      </button>
+    </form>
+    
       <div id="loading" class="loader hidden" style="margin-top: 20px"></div>
       <div id="results" class="hidden">
-      <h3>Resultados</h3>
-      <img
-        id="histogram"
-        src=""
-        class="img-fluid hidden"
-      />
-      <p>
-        Chi-cuadrado Estadístico: <span id="chiSquareStat"></span> (<span
-          id="chiResult"
-        ></span
-        >)
-      </p>
-      <p>Chi-cuadrado P-Valor: <span id="chiSquareP" class=""></span></p>
-      <p>
-        Kolmogorov-Smirnov Estadístico: <span id="kolmogorovStat"></span> (<span
-          id="ksResult"
-        ></span
-        >)
-      </p>
-      <p>Kolmogorov-Smirnov P-Valor: <span id="kolmogorovP" class=""></span></p>
-    </div>
+        <h3>Resultados</h3>
+        <img id="histogram" src="" class="img-fluid hidden" />
+        <p>
+          Chi-cuadrado Calculado: <span id="chiSquareStat"></span> < Valor Tabulado: <span id="chiCritical"></span>
+          <span id="chiResult" class="significant"></span>
+        </p>
+        <p>
+          Kolmogorov-Smirnov Calculado: <span id="kolmogorovStat"></span> < Valor Tabulado: <span id="ksCritical"></span>
+          <span id="ksResult" class="significant"></span>
+        </p>
+            </div>
       <div id="summaryTable" class="hidden">
         <h4>Resumen de los números generados</h4>
         <table class="table">
@@ -178,22 +160,33 @@
       let generatedData = [];
 
       function updateParameters() {
-        var distribucion = $("#distribucion").val();
-        var paramsHTML = "";
-        if (distribucion === "uniforme") {
-          paramsHTML =
-            '<div class="form-group"><label for="param1">a (Límite inferior):</label><input type="number" id="param1" value="0" class="form-control"></div>' +
-            '<div class="form-group"><label for="param2">b (Límite superior):</label><input type="number" id="param2" value="1" class="form-control"></div>';
-        } else if (distribucion === "exponencial") {
-          paramsHTML =
-            '<div class="form-group"><label for="param1">Lambda (λ):</label><input type="number" id="param1" value="1" class="form-control"></div>';
-        } else if (distribucion === "normal") {
-          paramsHTML =
-            '<div class="form-group"><label for="param1">Mu (μ, Media):</label><input type="number" id="param1" value="0" class="form-control"></div>' +
-            '<div class="form-group"><label for="param2">Sigma (σ, Desviación Estándar):</label><input type="number" id="param2" value="1" class="form-control"></div>';
-        }
-        $("#params").html(paramsHTML);
-      }
+  var distribucion = $("#distribucion").val();
+  var paramsHTML = "";
+  if (distribucion === "uniforme" || distribucion === "normal") {
+    var label1 = distribucion === "uniforme" ? "a (Límite inferior)" : "μ, Media";
+    var label2 = distribucion === "uniforme" ? "b (Límite superior)" : "σ, Desviación Std";
+    paramsHTML = `
+      <div class="row">
+        <div class="col-sm-6 form-group">
+          <label for="param1">${label1}</label>
+          <input type="number" id="param1" value="${distribucion === "uniforme" ? 0 : 0}" class="form-control">
+        </div>
+        <div class="col-sm-6 form-group">
+          <label for="param2">${label2}</label>
+          <input type="number" id="param2" value="${distribucion === "uniforme" ? 1 : 1}" class="form-control">
+        </div>
+      </div>`;
+  } else if (distribucion === "exponencial") {
+    paramsHTML = `
+      <div class="row">
+        <div class="col-sm-12 form-group">
+          <label for="param1">Lambda (λ)</label>
+          <input type="number" id="param1" value="1" class="form-control">
+        </div>
+      </div>`;
+  }
+  $("#params").html(paramsHTML);
+}
 
       function generarNumeros() {
         $("#loading").removeClass("hidden");
@@ -228,37 +221,15 @@
             } else {
               $("#histogram").attr("src", response.histogram);
               $("#chiSquareStat").text(response.chi_square_stat);
-              $("#chiSquareP").text(response.chi_square_p);
               $("#kolmogorovStat").text(response.kolmogorovStat);
-              $("#kolmogorovP").text(response.kolmogorovP);
-              $("#chiResult")
-                .text(
-                  response.chi_Square_P < 0.05
-                    ? "Rechazar H0"
-                    : "No rechazar H0"
-                )
-                .addClass(
-                  response.chi_square_p < 0.05
-                    ? "significant"
-                    : "not-significant"
-                );
-              $("#ksResult")
-                .text(
-                  response.kolmogorovP < 0.05
-                    ? "Rechazar H0"
-                    : "No rechazar H0"
-                )
-                .addClass(
-                  response.kolmogorovP < 0.05
-                    ? "significant"
-                    : "not-significant"
-                );
               $("#loading").addClass("hidden");
               updateTable(response.data);
               $("#dataViewer").removeClass("hidden");
               $("#results").removeClass("hidden");
               $("#histogram").removeClass("hidden");              
               $("#tableSampleSize").text(response.sample_size);
+              $("#chiCritical").text(response.chi_critical);
+              $("#ksCritical").text(response.ks_critical);
               $("#tableMin").text(response.min);
               $("#tableMax").text(response.max);
               $("#tableRange").text(response.range);
@@ -266,6 +237,8 @@
               $("#tableAmplitude").text(response.bin_amplitude);
               $("#tableMean").text(response.mean);
               $("#summaryTable").removeClass("hidden");
+              updateResultsDisplay();
+
             }
           },
           error: function (xhr, textStatus, errorThrown) {
@@ -302,7 +275,36 @@
           renderPage();
         }
       }
-
+      function updateResultsDisplay() {
+        // Retrieve the numeric values from the elements
+        var chiCalculated = parseFloat($("#chiSquareStat").text());
+        var chiTabulated = parseFloat($("#chiCritical").text());
+        var ksCalculated = parseFloat($("#kolmogorovStat").text());
+        var ksTabulated = parseFloat($("#ksCritical").text());
+      
+        // Determine the result for Chi-squared test
+        if (chiCalculated > chiTabulated) {
+          $("#chiResult").text(" (Rechazar H0)");
+          $("#chiResult").addClass("significant");
+          $("#chiResult").removeClass("not-significant");
+        } else {
+          $("#chiResult").text(" (No se puede rechazar la hipótesis nula H0)");
+          $("#chiResult").addClass("not-significant");
+          $("#chiResult").removeClass("significant");
+        }
+      
+        // Determine the result for Kolmogorov-Smirnov test
+        if (ksCalculated > ksTabulated) {
+          $("#ksResult").text(" (No se puede rechazar la hipótesis nula H0)");
+          $("#ksResult").addClass("significant");
+          $("#ksResult").removeClass("not-significant");
+        } else {
+          $("#ksResult").text(" (No rechazar H0)");
+          $("#ksResult").addClass("not-significant");
+          $("#ksResult").removeClass("significant");
+        }
+      }
+      
       updateParameters();
     </script>
   </body>
