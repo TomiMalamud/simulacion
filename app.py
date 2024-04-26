@@ -70,6 +70,35 @@ def merge_intervals(o, e):
             merged_e.append(temp_e)
 
     return np.array(merged_o), np.array(merged_e)
+def generate_ks_table(bin_edges, counts, frecuenciasEsperadas):
+    # Initialize accumulators for Po and Pe
+    total_fo = sum(counts)
+    total_fe = sum(frecuenciasEsperadas)
+
+    Po = counts / total_fo
+    Pe = frecuenciasEsperadas / total_fe
+
+    Po_ac = np.cumsum(Po)
+    Pe_ac = np.cumsum(Pe)
+
+    absolute_differences = np.abs(Po_ac - Pe_ac)
+    max_diff = np.max(absolute_differences)
+
+    ks_table = []
+    for i in range(len(bin_edges) - 1):
+        ks_table.append({
+            "lower_limit": bin_edges[i],
+            "upper_limit": bin_edges[i+1],
+            "fo": counts[i],
+            "fe": frecuenciasEsperadas[i],
+            "Po": Po[i],
+            "Pe": Pe[i],
+            "Po(AC)": Po_ac[i],
+            "Pe(AC)": Pe_ac[i],
+            "|Po(AC)-Pe(AC)|": absolute_differences[i],
+            "Max": max_diff if i == len(bin_edges) - 2 else None  # Only show max at the last row
+        })
+    return ks_table
 
 
 def get_ks_critical_value(n):
@@ -84,10 +113,10 @@ def get_ks_critical_value(n):
     - float: critical value for the KS test
     """
     if n <= 0:
-        raise ValueError("Sample size must be greater than zero.")
+        raise ValueError("El tamaño de la muestra debe ser mayor a cero.")
     if n in ks_critical_values:
         return ks_critical_values[n]
-    return 1.36 / np.sqrt(n)  # Use approximation for larger sample sizes
+    return 1.36 / np.sqrt(n)  
 
 def manual_chi_square(o, e):
     """
@@ -261,7 +290,7 @@ def generate_numbers():
         fig, ax = plt.subplots()
         counts, bins, patches = ax.hist(data, bins=bin_edges, color="blue", edgecolor="black")
         ax.set_xlabel("Valor")
-        ax.set_ylabel("Frequencia")
+        ax.set_ylabel("Frecuencia")
         plt.title("Histograma")
 
         # Histograma a PNG
@@ -310,6 +339,7 @@ def generate_numbers():
             }
             chi_squared_table.append(row)
 
+        ks_table = generate_ks_table(bin_edges, counts, frecuenciasEsperadas)
 
         data_min = np.min(data)
         data_max = np.max(data)
@@ -327,12 +357,12 @@ def generate_numbers():
             "min": np.round(data_min, 4),
             "max": np.round(data_max, 4),
             "range": np.round(data_range, 4),
-            "number_of_bins": num_bins,
             "bin_amplitude": np.round(bin_amplitude, 4),
             "mean": np.round(data_mean, 4),
             "chi_critical": np.round(chi_critical, 4),
             "ks_critical": np.round(ks_critical, 4),
-            "chi_squared_table": chi_squared_table
+            "chi_squared_table": chi_squared_table,
+            "ks_table": ks_table,
             }        
 
         return jsonify(result)

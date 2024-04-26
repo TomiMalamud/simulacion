@@ -12,6 +12,9 @@
       body {
         padding: 100px;
       }
+      h4{
+        padding-bottom: 1em;
+      }
       .loader,
       .pagination-loader {
         border: 6px solid #f3f3f3;
@@ -45,9 +48,9 @@
       <h2 class="text-center">Generador de Números Aleatorios</h2>
       <p class="text-center text-secondary">
         Seleccioná una distribución y parámetros para definir la hipótesis nula
-        (H0) de cómo se distribuyen los datos generados.
+        H<sub>0</sub> de cómo se distribuyen los datos generados.
       </p>
-      <form id="dataForm" class="row">
+      <form id="dataForm" class="rounded bg-light p-4 row">
         <div class="col-md-6">
           <div class="form-group">
             <label for="sampleSize">Tamaño de Muestra (N)</label>
@@ -86,7 +89,7 @@
         <div class="col-12">
           <button
             type="button"
-            class="btn w-100 btn-primary"
+            class="btn w-100 btn-dark"
             onclick="generarNumeros()"
           >
             Generar
@@ -97,7 +100,8 @@
       <div id="loading" class="loader hidden" style="margin-top: 20px"></div>
       <div id="results" class="hidden pt-5">
         <h3>Resultados</h3>
-        <img id="histogram" src="" class="img-fluid hidden" />
+        <p id="samplesProcessed" class="text-secondary"></p>
+        <img id="histogram" src="" class="img-fluid hidden pb-5" />
         <p>
           Chi-cuadrado Calculado:
           <span style="font-weight: bold" id="chiSquareStat"></span> < Valor
@@ -120,34 +124,30 @@
               <td id="tableSampleSize"></td>
             </tr>
             <tr>
-              <td>Min:</td>
+              <td>Min</td>
               <td id="tableMin"></td>
             </tr>
             <tr>
-              <td>Max:</td>
+              <td>Max</td>
               <td id="tableMax"></td>
             </tr>
             <tr>
-              <td>Rango:</td>
+              <td>Rango</td>
               <td id="tableRange"></td>
             </tr>
             <tr>
-              <td>Cantidad de intervalos:</td>
-              <td id="tableBins"></td>
-            </tr>
-            <tr>
-              <td>Amplitud de intervalos:</td>
+              <td>Amplitud de intervalos</td>
               <td id="tableAmplitude"></td>
             </tr>
             <tr>
-              <td>Media:</td>
+              <td>Media</td>
               <td id="tableMean"></td>
             </tr>
           </tbody>
         </table>
       </div>
       <div id="chiSquaredTableContainer"></div>
-
+      <div id="ksTableContainer"></div>
       <div id="dataViewer" class="hidden pt-5">
         <h4>Números Generados</h4>
         <table class="table table-striped">
@@ -177,7 +177,7 @@
     </div>
     <script>
       let currentPage = 0;
-      let numPerPage = 100;
+      let numPerPage = 1000;
       let generatedData = [];
 
       function updateParameters() {
@@ -219,6 +219,7 @@
 
       function generarNumeros() {
         $("#loading").removeClass("hidden");
+        var startTime = performance.now(); 
         var sampleSize = $("#sampleSize").val();
         var distribucion = $("#distribucion").val();
         var param1 = $("#param1").val();
@@ -233,8 +234,6 @@
           params["lambda"] = param1;
         }
 
-        // Append the table to a div or wherever you want it to appear on your page
-
         $.ajax({
           type: "POST",
           url: "/generate",
@@ -246,10 +245,35 @@
             intervalos: numBins
           }),
           success: function (response) {
+            var endTime = performance.now(); 
+            var responseTime = ((endTime - startTime) / 1000).toFixed(2); 
+            $("#responseTime").text(responseTime);
+            $("#samplesProcessed").text(`Se procesaron ${sampleSize} muestras en ${responseTime} segundos`);
+
             if (response.error) {
-              alert(response.error); // Show error if there is an error field in response
+              alert(response.error);
               $("#loading").addClass("hidden");
             } else {
+              let ksTableHtml = `
+              <h4 class="pt-5">Tabla de Kolmogorov-Smirnov</h4>
+              <table class="table"><thead><tr><th>Desde</th><th>Hasta</th><th>fo</th><th>fe</th><th>Po</th><th>Pe</th><th>Po<sub>ac</sub></th><th>Pe<sub>ac</sub></th><th>|Po<sub>ac</sub>-Pe<sub>ac</sub>|</th><th>Max</th></tr></thead><tbody>`;
+                response.ks_table.forEach(row => {
+                    ksTableHtml += `<tr>
+                        <td>${row.lower_limit.toFixed(2)}</td>
+                        <td>${row.upper_limit.toFixed(2)}</td>
+                        <td>${row.fo}</td>
+                        <td>${row.fe.toFixed(2)}</td>
+                        <td>${row.Po.toFixed(4)}</td>
+                        <td>${row.Pe.toFixed(4)}</td>
+                        <td>${row['Po(AC)'].toFixed(4)}</td>
+                        <td>${row['Pe(AC)'].toFixed(4)}</td>
+                        <td>${row['|Po(AC)-Pe(AC)|'].toFixed(4)}</td>
+                        <td style="color: red; font-weight:bold">${row.Max ? row.Max.toFixed(4) : ''}</td>
+                    </tr>`;
+                });
+                ksTableHtml += '</tbody></table>';
+                document.getElementById('ksTableContainer').innerHTML = ksTableHtml; // Ensure you have a container with this ID in HTML
+            
               var chiSquaredTableHTML = `
               <h4 class="pt-5">Tabla de Chi Cuadrado</h4>
               <table class="table">
@@ -298,7 +322,6 @@
               $("#tableMin").text(response.min);
               $("#tableMax").text(response.max);
               $("#tableRange").text(response.range);
-              $("#tableBins").text(response.number_of_bins);
               $("#tableAmplitude").text(response.bin_amplitude);
               $("#tableMean").text(response.mean);
               $("#summaryTable").removeClass("hidden");
