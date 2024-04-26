@@ -216,8 +216,22 @@
         }
         $("#params").html(paramsHTML);
       }
-
+      function validarParametros() {
+        var distribucion = $("#distribucion").val();
+        var sigma = parseFloat($("#param2").val()); // Assuming sigma is in param2 for normal distribution
+        if (distribucion === "normal" && sigma <= 0) {
+            alert("Sigma debe ser positivo.");
+            return false;
+        }
+        return true;
+    }
+    
+    
       function generarNumeros() {
+        if (!validarParametros()) {
+          return; // Stop the function if validation fails
+      }
+  
         $("#loading").removeClass("hidden");
         var startTime = performance.now();
         var sampleSize = $("#sampleSize").val();
@@ -233,6 +247,18 @@
         } else if (distribucion === "exponencial") {
           params["lambda"] = param1;
         }
+
+        if (distribucion === "uniforme") {
+          params["a"] = parseFloat(param1);
+          params["b"] = parseFloat(param2);
+      } else if (distribucion === "exponencial") {
+          params["lambda"] = parseFloat(param1);
+      } else if (distribucion === "normal") {
+          params["mu"] = parseFloat(param1);
+          params["sigma"] = parseFloat(param2); // Correct assignment for sigma
+      }
+      
+      
 
         $.ajax({
           type: "POST",
@@ -261,8 +287,8 @@
               <table class="table"><thead><tr><th>Desde</th><th>Hasta</th><th>fo</th><th>fe</th><th>Po</th><th>Pe</th><th>Po<sub>ac</sub></th><th>Pe<sub>ac</sub></th><th>|Po<sub>ac</sub>-Pe<sub>ac</sub>|</th><th>Max</th></tr></thead><tbody>`;
               response.ks_table.forEach((row) => {
                 ksTableHtml += `<tr>
-                        <td>${row.lower_limit.toFixed(2)}</td>
-                        <td>${row.upper_limit.toFixed(2)}</td>
+                        <td>${row.limite_inferior.toFixed(2)}</td>
+                        <td>${row.limite_superior.toFixed(2)}</td>
                         <td>${row.fo}</td>
                         <td>${row.fe.toFixed(2)}</td>
                         <td>${row.Po.toFixed(4)}</td>
@@ -299,8 +325,8 @@
                   index === response.chi_squared_table.length - 1;
                 chiSquaredTableHTML += `
             <tr>
-                <td>${row.lower_limit.toFixed(2)}</td>
-                <td>${row.upper_limit.toFixed(2)}</td>
+                <td>${row.limite_inferior.toFixed(2)}</td>
+                <td>${row.limite_superior.toFixed(2)}</td>
                 <td>${row.fo}</td>
                 <td>${row.fe.toFixed(2)}</td>
                 <td>${row.c.toFixed(2)}</td>
