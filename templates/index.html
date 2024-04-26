@@ -12,7 +12,7 @@
       body {
         padding: 100px;
       }
-      h4{
+      h4 {
         padding-bottom: 1em;
       }
       .loader,
@@ -219,7 +219,7 @@
 
       function generarNumeros() {
         $("#loading").removeClass("hidden");
-        var startTime = performance.now(); 
+        var startTime = performance.now();
         var sampleSize = $("#sampleSize").val();
         var distribucion = $("#distribucion").val();
         var param1 = $("#param1").val();
@@ -245,10 +245,12 @@
             intervalos: numBins
           }),
           success: function (response) {
-            var endTime = performance.now(); 
-            var responseTime = ((endTime - startTime) / 1000).toFixed(2); 
+            var endTime = performance.now();
+            var responseTime = ((endTime - startTime) / 1000).toFixed(2);
             $("#responseTime").text(responseTime);
-            $("#samplesProcessed").text(`Se procesaron ${sampleSize} muestras en ${responseTime} segundos`);
+            $("#samplesProcessed").text(
+              `Se procesaron ${sampleSize} muestras en ${responseTime} segundos`
+            );
 
             if (response.error) {
               alert(response.error);
@@ -257,23 +259,26 @@
               let ksTableHtml = `
               <h4 class="pt-5">Tabla de Kolmogorov-Smirnov</h4>
               <table class="table"><thead><tr><th>Desde</th><th>Hasta</th><th>fo</th><th>fe</th><th>Po</th><th>Pe</th><th>Po<sub>ac</sub></th><th>Pe<sub>ac</sub></th><th>|Po<sub>ac</sub>-Pe<sub>ac</sub>|</th><th>Max</th></tr></thead><tbody>`;
-                response.ks_table.forEach(row => {
-                    ksTableHtml += `<tr>
+              response.ks_table.forEach((row) => {
+                ksTableHtml += `<tr>
                         <td>${row.lower_limit.toFixed(2)}</td>
                         <td>${row.upper_limit.toFixed(2)}</td>
                         <td>${row.fo}</td>
                         <td>${row.fe.toFixed(2)}</td>
                         <td>${row.Po.toFixed(4)}</td>
                         <td>${row.Pe.toFixed(4)}</td>
-                        <td>${row['Po(AC)'].toFixed(4)}</td>
-                        <td>${row['Pe(AC)'].toFixed(4)}</td>
-                        <td>${row['|Po(AC)-Pe(AC)|'].toFixed(4)}</td>
-                        <td style="color: red; font-weight:bold">${row.Max ? row.Max.toFixed(4) : ''}</td>
+                        <td>${row["Po(AC)"].toFixed(4)}</td>
+                        <td>${row["Pe(AC)"].toFixed(4)}</td>
+                        <td>${row["|Po(AC)-Pe(AC)|"].toFixed(4)}</td>
+                        <td style="color: red; font-weight:bold">${
+                          row.Max ? row.Max.toFixed(4) : ""
+                        }</td>
                     </tr>`;
-                });
-                ksTableHtml += '</tbody></table>';
-                document.getElementById('ksTableContainer').innerHTML = ksTableHtml; // Ensure you have a container with this ID in HTML
-            
+              });
+              ksTableHtml += "</tbody></table>";
+              document.getElementById("ksTableContainer").innerHTML =
+                ksTableHtml; // Ensure you have a container with this ID in HTML
+
               var chiSquaredTableHTML = `
               <h4 class="pt-5">Tabla de Chi Cuadrado</h4>
               <table class="table">

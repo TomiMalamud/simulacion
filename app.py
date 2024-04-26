@@ -11,26 +11,60 @@ import math
 matplotlib.use("Agg")
 app = Flask(__name__)
 
+
 @app.route("/")
 def index():
     return render_template("index.html")
 
-ks_critical_values = { 
-    1: 0.975, 2: 0.842, 3: 0.708, 4: 0.624, 5: 0.563, 6: 0.521, 7: 0.486,
-    8: 0.457, 9: 0.432, 10: 0.410, 11: 0.391, 12: 0.375, 13: 0.361, 14: 0.349,
-    15: 0.338, 16: 0.328, 17: 0.318, 18: 0.309, 19: 0.301, 20: 0.294, 21: 0.287,
-    22: 0.281, 23: 0.275, 24: 0.269, 25: 0.264, 26: 0.259, 27: 0.254, 28: 0.250,
-    29: 0.246, 30: 0.242, 31: 0.238, 32: 0.234, 33: 0.231, 34: 0.227, 35: 0.224
+
+ks_critical_values = {
+    1: 0.975,
+    2: 0.842,
+    3: 0.708,
+    4: 0.624,
+    5: 0.563,
+    6: 0.521,
+    7: 0.486,
+    8: 0.457,
+    9: 0.432,
+    10: 0.410,
+    11: 0.391,
+    12: 0.375,
+    13: 0.361,
+    14: 0.349,
+    15: 0.338,
+    16: 0.328,
+    17: 0.318,
+    18: 0.309,
+    19: 0.301,
+    20: 0.294,
+    21: 0.287,
+    22: 0.281,
+    23: 0.275,
+    24: 0.269,
+    25: 0.264,
+    26: 0.259,
+    27: 0.254,
+    28: 0.250,
+    29: 0.246,
+    30: 0.242,
+    31: 0.238,
+    32: 0.234,
+    33: 0.231,
+    34: 0.227,
+    35: 0.224,
 }
+
 
 def chi_squared_critical_value(df, alpha=0.05):
     """
     Calculate the critical value for the Chi-squared test for a given alpha level.
-    
+
     df: degrees of freedom
     alpha: significance level (default 0.05)
     """
     return stats.chi2.ppf(1 - alpha, df)
+
 
 def merge_intervals(o, e):
     """
@@ -70,6 +104,8 @@ def merge_intervals(o, e):
             merged_e.append(temp_e)
 
     return np.array(merged_o), np.array(merged_e)
+
+
 def generate_ks_table(bin_edges, counts, frecuenciasEsperadas):
     # Initialize accumulators for Po and Pe
     total_fo = sum(counts)
@@ -86,18 +122,22 @@ def generate_ks_table(bin_edges, counts, frecuenciasEsperadas):
 
     ks_table = []
     for i in range(len(bin_edges) - 1):
-        ks_table.append({
-            "lower_limit": bin_edges[i],
-            "upper_limit": bin_edges[i+1],
-            "fo": counts[i],
-            "fe": frecuenciasEsperadas[i],
-            "Po": Po[i],
-            "Pe": Pe[i],
-            "Po(AC)": Po_ac[i],
-            "Pe(AC)": Pe_ac[i],
-            "|Po(AC)-Pe(AC)|": absolute_differences[i],
-            "Max": max_diff if i == len(bin_edges) - 2 else None  # Only show max at the last row
-        })
+        ks_table.append(
+            {
+                "lower_limit": bin_edges[i],
+                "upper_limit": bin_edges[i + 1],
+                "fo": counts[i],
+                "fe": frecuenciasEsperadas[i],
+                "Po": Po[i],
+                "Pe": Pe[i],
+                "Po(AC)": Po_ac[i],
+                "Pe(AC)": Pe_ac[i],
+                "|Po(AC)-Pe(AC)|": absolute_differences[i],
+                "Max": (
+                    max_diff if i == len(bin_edges) - 2 else None
+                ),  # Only show max at the last row
+            }
+        )
     return ks_table
 
 
@@ -105,10 +145,10 @@ def get_ks_critical_value(n):
     """
     Retrieve the critical value for the Kolmogorov-Smirnov test given a sample size.
     Uses hardcoded values for n <= 35 and an approximation for larger n.
-    
+
     Parameters:
     - n (int): sample size
-    
+
     Returns:
     - float: critical value for the KS test
     """
@@ -116,7 +156,8 @@ def get_ks_critical_value(n):
         raise ValueError("El tamaño de la muestra debe ser mayor a cero.")
     if n in ks_critical_values:
         return ks_critical_values[n]
-    return 1.36 / np.sqrt(n)  
+    return 1.36 / np.sqrt(n)
+
 
 def manual_chi_square(o, e):
     """
@@ -138,6 +179,7 @@ def manual_chi_square(o, e):
 
 
 # Funciones para generar los datos aleatorios de las diferentes distriibuciones...
+
 
 def uniform_generator(a, b, n):
     numeros_aleatorios = []
@@ -163,12 +205,18 @@ def normal_generator(mu, sigma, n):
         numero_aleatorio1 = random.random()
         numero_aleatorio2 = random.random()
 
-        normal1 = (math.sqrt(-2*math.log(numero_aleatorio1)) * math.cos(2*math.pi*numero_aleatorio2)) * sigma + mu
-        normal2 = (math.sqrt(-2*math.log(numero_aleatorio2)) * math.cos(2*math.pi*numero_aleatorio1)) * sigma + mu
-        
+        normal1 = (
+            math.sqrt(-2 * math.log(numero_aleatorio1))
+            * math.cos(2 * math.pi * numero_aleatorio2)
+        ) * sigma + mu
+        normal2 = (
+            math.sqrt(-2 * math.log(numero_aleatorio2))
+            * math.cos(2 * math.pi * numero_aleatorio1)
+        ) * sigma + mu
+
         numeros_aleatorios.append(normal1)
         numeros_aleatorios.append(normal2)
-    
+
     return numeros_aleatorios
 
 
@@ -181,26 +229,28 @@ def calcularProbObservadas(frecuencias, n):
         probFrecObsAc.append(acumulador)
     return probFrecObsAc
 
+
 import numpy as np
+
 
 def ks_statistic(observed_freq, expected_freq):
     """
     Calculate the Kolmogorov-Smirnov statistic.
-    
+
     Parameters:
     observed_freq (list or np.array): The observed frequencies.
     expected_freq (list or np.array): The expected frequencies.
-    
+
     Returns:
     float: The Kolmogorov-Smirnov statistic.
     """
     # Convert frequencies to cumulative probabilities
     cum_observed = np.cumsum(observed_freq) / np.sum(observed_freq)
     cum_expected = np.cumsum(expected_freq) / np.sum(expected_freq)
-    
+
     # Calculate the KS statistic
     ks = np.max(np.abs(cum_observed - cum_expected))
-    
+
     return ks
 
 
@@ -230,13 +280,15 @@ def generate_numbers():
             b = float(params.get("b", 1))
             if a >= b:
                 raise ValueError("'a' debe ser menor a 'b'.")
-            
+
             # Generación variables aleatorias uniformes...
             data = uniform_generator(a, b, n)
-            #Calcular las frecuencias esperadas de los intervalos
+            # Calcular las frecuencias esperadas de los intervalos
             frecuenciasEsperadas = np.full(intervalos, n / intervalos)
-            probFrecuenciasEsp = np.array(list(map(lambda x: x / n, frecuenciasEsperadas)))
-            chi_critical = chi_squared_critical_value(intervalos - 1,0.05)
+            probFrecuenciasEsp = np.array(
+                list(map(lambda x: x / n, frecuenciasEsperadas))
+            )
+            chi_critical = chi_squared_critical_value(intervalos - 1, 0.05)
             # Crear array con las probabilidades esperadas acumuladas
             probFrecuenciasEspAc = []
             acumulador = 0
@@ -250,8 +302,8 @@ def generate_numbers():
             lambd = float(params.get("lambda", 1))
             if lambd <= 0:
                 raise ValueError("Lambda debe ser positivo.")
-            scale = 1/lambd
-            chi_critical = chi_squared_critical_value(intervalos - 2,0.05)
+            scale = 1 / lambd
+            chi_critical = chi_squared_critical_value(intervalos - 2, 0.05)
 
             # Generar variables aleatorias exponenciales negativas...
             data = exponential_generator(scale, n)
@@ -261,7 +313,7 @@ def generate_numbers():
             # Calcular la probabilidad acumulativa de cada uno de los intervalos...
             probFrecuenciasEspAc = stats.expon.cdf(bin_edges, scale=scale)
             # Calcular frecuencias esperadas de cada intervalo...
-            # Diff crea un array con las diferencias entre elementos consecutivos de un array... 
+            # Diff crea un array con las diferencias entre elementos consecutivos de un array...
             probFrecuenciasEsp = np.diff(probFrecuenciasEspAc)
             frecuenciasEsperadas = probFrecuenciasEsp * n
 
@@ -270,13 +322,13 @@ def generate_numbers():
             sigma = float(params.get("sigma", 1))
             if sigma <= 0:
                 raise ValueError("Sigma debe ser positivo.")
-            chi_critical = chi_squared_critical_value(intervalos - 3,0.05)
-            
+            chi_critical = chi_squared_critical_value(intervalos - 3, 0.05)
+
             # Generar variables aleatorias normales...
             data = normal_generator(mu, sigma, n)
 
-            lower_bound = stats.norm.ppf(0.005, mu, sigma)  
-            upper_bound = stats.norm.ppf(0.995, mu, sigma)  
+            lower_bound = stats.norm.ppf(0.005, mu, sigma)
+            upper_bound = stats.norm.ppf(0.995, mu, sigma)
             bin_edges = np.linspace(lower_bound, upper_bound, intervalos + 1)
             probFrecuenciasEspAc = stats.norm.cdf(bin_edges, mu, sigma)
             probFrecuenciasEsp = np.diff(probFrecuenciasEspAc)
@@ -288,7 +340,9 @@ def generate_numbers():
 
         # Generar histograma
         fig, ax = plt.subplots()
-        counts, bins, patches = ax.hist(data, bins=bin_edges, color="blue", edgecolor="black")
+        counts, bins, patches = ax.hist(
+            data, bins=bin_edges, color="blue", edgecolor="black"
+        )
         ax.set_xlabel("Valor")
         ax.set_ylabel("Frecuencia")
         plt.title("Histograma")
@@ -301,7 +355,7 @@ def generate_numbers():
         plot_url = base64.b64encode(img.getvalue()).decode("utf8")
 
         # Ajuste de Frecuencias esperadas para coincidir frecuencia observada
-        frecuenciasEsperadas *= (counts.sum() / frecuenciasEsperadas.sum())
+        frecuenciasEsperadas *= counts.sum() / frecuenciasEsperadas.sum()
 
         # Prueba de bondad de ajuste
         try:
@@ -309,7 +363,9 @@ def generate_numbers():
         except ValueError as e:
             return jsonify({"error": str(e)}), 400
 
-        chi2_stat_scipy, chi2_p_scipy = stats.chisquare(counts, f_exp=frecuenciasEsperadas)
+        chi2_stat_scipy, chi2_p_scipy = stats.chisquare(
+            counts, f_exp=frecuenciasEsperadas
+        )
 
         # Print both statistics for comparison
         print("Manual Chi-Squared Statistic:", chi2_stat)
@@ -319,23 +375,25 @@ def generate_numbers():
 
         # Calcular Ks..
         probFrecuenciasObsAc = calcularProbObservadas(counts, n)
-        ksCalculado = calcularKs(probFrecuenciasObsAc,probFrecuenciasEspAc, distribucion)
-        ksCalculadoGPT= ks_statistic(counts, frecuenciasEsperadas)        
+        ksCalculado = calcularKs(
+            probFrecuenciasObsAc, probFrecuenciasEspAc, distribucion
+        )
+        ksCalculadoGPT = ks_statistic(counts, frecuenciasEsperadas)
         print(ksCalculado, ksCalculadoGPT)
-        
-        c_values = (frecuenciasEsperadas - counts)**2 / frecuenciasEsperadas
+
+        c_values = (frecuenciasEsperadas - counts) ** 2 / frecuenciasEsperadas
         c_ac_values = np.cumsum(c_values)
-    
+
         # Build rows for the Chi-squared table
         chi_squared_table = []
         for i in range(len(bin_edges) - 1):
             row = {
                 "lower_limit": bin_edges[i],
-                "upper_limit": bin_edges[i+1],
+                "upper_limit": bin_edges[i + 1],
                 "fo": counts[i],
                 "fe": frecuenciasEsperadas[i],
                 "c": c_values[i],
-                "c_ac": c_ac_values[i]
+                "c_ac": c_ac_values[i],
             }
             chi_squared_table.append(row)
 
@@ -346,8 +404,8 @@ def generate_numbers():
         data_range = data_max - data_min
         num_bins = int(np.sqrt(n)) + 1
         bin_amplitude = data_range / num_bins
-        data_mean = np.mean(data)        
-        
+        data_mean = np.mean(data)
+
         result = {
             "histogram": "data:image/png;base64,{}".format(plot_url),
             "chi_square_stat": np.round(chi2_stat, 4),
@@ -363,17 +421,17 @@ def generate_numbers():
             "ks_critical": np.round(ks_critical, 4),
             "chi_squared_table": chi_squared_table,
             "ks_table": ks_table,
-            }        
+        }
 
         return jsonify(result)
-        
 
     except ValueError as e:
-        return jsonify({"error": str(e)}), 400  
+        return jsonify({"error": str(e)}), 400
 
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(debug=False)
