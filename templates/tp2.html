@@ -1,0 +1,441 @@
+{%extends 'base.html'%} {%block content%}
+<style>
+  .table {
+    --bs-table-bg: black
+  }
+</style>
+<div class="container p-5 w-75">
+  <h1 class="text-center">Generador de Números Aleatorios</h1>
+  <p class="text-center text-secondary">
+    Seleccioná una distribución y parámetros para definir la hipótesis nula
+    H<sub>0</sub> de cómo se distribuyen los datos generados.
+  </p>
+  <form
+    id="dataForm"
+    class="rounded border border-dark-subtle bg-secondary-subtle p-4 mt-5 row"
+  >
+    <div class="col-md-6">
+      <div class="form-group mb-3">
+        <label for="sampleSize">Tamaño de Muestra (N)</label>
+        <input
+          type="number"
+          id="sampleSize"
+          value="1000"
+          class="form-control"
+        />
+      </div>
+      <div class="form-group">
+        <label for="numBins">Cantidad de intervalos</label>
+
+        <select id="numBins" class="form-select">
+          <option value="10">10</option>
+          <option value="12">12</option>
+          <option value="16">16</option>
+          <option value="23">23</option>
+        </select>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="form-group mb-3">
+        <label for="distribucion">Distribución</label>
+        <select
+          id="distribucion"
+          class="form-control"
+          onchange="updateParameters();"
+        >
+          <option value="uniforme">Uniforme</option>
+          <option value="exponencial">Exponencial</option>
+          <option value="normal">Normal</option>
+        </select>
+      </div>
+      <div id="params" class="form-group"></div>
+    </div>
+    <div class="col-12 mt-4">
+      <button
+        type="button"
+        class="btn w-100 btn-light"
+        onclick="generarNumeros()"
+      >
+        Generar
+      </button>
+    </div>
+  </form>
+
+  <div id="loading" class="loader hidden" style="margin-top: 20px"></div>
+  <div id="results" class="hidden pt-5">
+    <h3>Resultados</h3>
+    <p id="samplesProcessed" class="text-secondary"></p>
+    <img id="histogram" src="" class="img-fluid hidden pb-5" />
+    <p>
+      Chi-cuadrado Calculado:
+      <span style="font-weight: bold" id="chiSquareStat"></span> < Valor
+      Tabulado: <span style="font-weight: bold" id="chiCritical"></span>
+      <span id="chiResult" class="significant"></span>
+    </p>
+    <p>
+      Kolmogorov-Smirnov Calculado:
+      <span style="font-weight: bold" id="kolmogorovStat"></span> < Valor
+      Tabulado: <span style="font-weight: bold" id="ksCritical"></span>
+      <span id="ksResult" class="significant"></span>
+    </p>
+  </div>
+  <div id="summaryTable" class="hidden pt-5">
+    <h4>Resumen de los números generados</h4>
+    <table class="table">
+      <tbody>
+        <tr>
+          <td>N: Tamaño de la muestra</td>
+          <td id="tableSampleSize"></td>
+        </tr>
+        <tr>
+          <td>Min</td>
+          <td id="tableMin"></td>
+        </tr>
+        <tr>
+          <td>Max</td>
+          <td id="tableMax"></td>
+        </tr>
+        <tr>
+          <td>Rango</td>
+          <td id="tableRange"></td>
+        </tr>
+        <tr>
+          <td>Amplitud de intervalos</td>
+          <td id="tableAmplitude"></td>
+        </tr>
+        <tr>
+          <td>Media</td>
+          <td id="tableMean"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div id="chiSquaredTableContainer"></div>
+  <div id="ksTableContainer"></div>
+  <div id="dataViewer" class="hidden pt-5">
+    <h4>Números Generados</h4>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Valor</th>
+        </tr>
+      </thead>
+      <tbody id="dataBody"></tbody>
+    </table>
+    <nav aria-label="Page navigation">
+      <ul class="pagination">
+        <li class="page-item">
+          <a class="page-link" href="#" onclick="changePage(-1)">Anterior</a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="#" onclick="changePage(1)">Siguiente</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</div>
+<script>
+  let currentPage = 0;
+  let numPerPage = 1000;
+  let generatedData = [];
+  function combineRowsIfFeLow(chiSquaredTable, threshold = 5) {
+    let combinedTable = [];
+    let currentRow = null;
+
+    // Initialize accumulators for "fe" and "fo" to combine rows
+    let accumulatedFo = 0;
+    let accumulatedFe = 0;
+    let lowerLimit = null;
+
+    chiSquaredTable.forEach((row) => {
+      // If no active row or starting new grouping
+      if (!currentRow) {
+        currentRow = { ...row };
+        accumulatedFo = row.fo;
+        accumulatedFe = row.fe;
+        lowerLimit = row.limite_inferior;
+      } else {
+        // Add to current accumulation
+        accumulatedFo += row.fo;
+        accumulatedFe += row.fe;
+
+        // If the accumulated expected frequency is still below or equal to the threshold, keep combining
+        if (accumulatedFe <= threshold) {
+          currentRow.limite_superior = row.limite_superior;
+          currentRow.fo = accumulatedFo;
+          currentRow.fe = accumulatedFe;
+        } else {
+          // When the accumulated "fe" is greater than the threshold, finalize the current group
+          currentRow.c = (currentRow.fe - currentRow.fo) ** 2 / currentRow.fe;
+          combinedTable.push(currentRow);
+
+          // Start a new group
+          currentRow = { ...row };
+          accumulatedFo = row.fo;
+          accumulatedFe = row.fe;
+          lowerLimit = row.limite_inferior;
+        }
+      }
+    });
+
+    // Add the final row if it exists
+    if (currentRow) {
+      currentRow.c = (currentRow.fe - currentRow.fo) ** 2 / currentRow.fe;
+      combinedTable.push(currentRow);
+    }
+
+    // Recalculate cumulative Chi-squared values
+    let cumulative = 0;
+    combinedTable.forEach((row) => {
+      cumulative += row.c;
+      row.c_ac = cumulative;
+    });
+
+    return combinedTable;
+  }
+
+  function updateParameters() {
+    var distribucion = $("#distribucion").val();
+    var paramsHTML = "";
+    if (distribucion === "uniforme" || distribucion === "normal") {
+      var label1 =
+        distribucion === "uniforme" ? "a (Límite inferior)" : "μ, Media";
+      var label2 =
+        distribucion === "uniforme"
+          ? "b (Límite superior)"
+          : "σ, Desviación Std";
+      paramsHTML = `
+      <div class="row">
+        <div class="col-sm-6 form-group">
+          <label for="param1">${label1}</label>
+          <input type="number" id="param1" value="${
+            distribucion === "uniforme" ? 0 : 0
+          }" class="form-control">
+        </div>
+        <div class="col-sm-6 form-group">
+          <label for="param2">${label2}</label>
+          <input type="number" id="param2" value="${
+            distribucion === "uniforme" ? 1 : 1
+          }" class="form-control">
+        </div>
+      </div>`;
+    } else if (distribucion === "exponencial") {
+      paramsHTML = `
+      <div class="row">
+        <div class="col-sm-12 form-group">
+          <label for="param1">Lambda (λ)</label>
+          <input type="number" id="param1" value="1" class="form-control">
+        </div>
+      </div>`;
+    }
+    $("#params").html(paramsHTML);
+  }
+  function validarParametros() {
+    var distribucion = $("#distribucion").val();
+    var sigma = parseFloat($("#param2").val());
+    if (distribucion === "normal" && sigma <= 0) {
+      alert("Sigma debe ser positivo.");
+      return false;
+    }
+    return true;
+  }
+
+  function generarNumeros() {
+    if (!validarParametros()) {
+      return; // Stop the function if validation fails
+    }
+
+    $("#loading").removeClass("hidden");
+    var startTime = performance.now();
+    var sampleSize = $("#sampleSize").val();
+    var distribucion = $("#distribucion").val();
+    var param1 = $("#param1").val();
+    var param2 = $("#param2").val();
+    var numBins = $("#numBins").val();
+    var params = {};
+
+    if (distribucion === "uniforme" || distribucion === "normal") {
+      params["a"] = param1;
+      params["b"] = param2;
+    } else if (distribucion === "exponencial") {
+      params["lambda"] = param1;
+    }
+
+    if (distribucion === "uniforme") {
+      params["a"] = parseFloat(param1);
+      params["b"] = parseFloat(param2);
+    } else if (distribucion === "exponencial") {
+      params["lambda"] = parseFloat(param1);
+    } else if (distribucion === "normal") {
+      params["mu"] = parseFloat(param1);
+      params["sigma"] = parseFloat(param2); // Correct assignment for sigma
+    }
+
+    $.ajax({
+      type: "POST",
+      url: "/generate",
+      contentType: "application/json",
+      data: JSON.stringify({
+        muestra: sampleSize,
+        distribucion: distribucion,
+        params: params,
+        intervalos: numBins
+      }),
+      success: function (response) {
+        var endTime = performance.now();
+        var responseTime = ((endTime - startTime) / 1000).toFixed(2);
+        $("#responseTime").text(responseTime);
+        $("#samplesProcessed").text(
+          `Se procesaron ${sampleSize} muestras en ${responseTime} segundos`
+        );
+
+        if (response.error) {
+          alert(response.error);
+          $("#loading").addClass("hidden");
+        } else {
+          let ksTableHtml = `
+              <h4 class="pt-5">Tabla de Kolmogorov-Smirnov</h4>
+              <table class="table"><thead><tr><th>Desde</th><th>Hasta</th><th>fo</th><th>fe</th><th>Po</th><th>Pe</th><th>Po<sub>ac</sub></th><th>Pe<sub>ac</sub></th><th>|Po<sub>ac</sub>-Pe<sub>ac</sub>|</th><th>Max</th></tr></thead><tbody class="table-group-divider">`;
+          response.ks_table.forEach((row) => {
+            ksTableHtml += `<tr>
+                        <td>${row.limite_inferior.toFixed(2)}</td>
+                        <td>${row.limite_superior.toFixed(2)}</td>
+                        <td>${row.fo}</td>
+                        <td>${row.fe.toFixed(2)}</td>
+                        <td>${row.Po.toFixed(4)}</td>
+                        <td>${row.Pe.toFixed(4)}</td>
+                        <td>${row["Po(AC)"].toFixed(4)}</td>
+                        <td>${row["Pe(AC)"].toFixed(4)}</td>
+                        <td>${row["|Po(AC)-Pe(AC)|"].toFixed(4)}</td>
+                        <td style="color: red; font-weight:bold">${
+                          row.Max ? row.Max.toFixed(4) : ""
+                        }</td>
+                    </tr>`;
+          });
+          ksTableHtml += "</tbody></table>";
+          document.getElementById("ksTableContainer").innerHTML = ksTableHtml;
+          let processedChiSquaredTable = combineRowsIfFeLow(
+            response.chi_squared_table
+          );
+
+          var chiSquaredTableHTML = `
+              <h4 class="pt-5">Tabla de Chi Cuadrado</h4>
+              <table class="table">
+                  <thead>
+                      <tr>
+                          <th>Desde</th>
+                          <th>Hasta</th>
+                          <th>fo</th>
+                          <th>fe</th>
+                          <th>c</th>
+                          <th>c<sub>ac</sub></th>
+                      </tr>
+                  </thead>
+                  <tbody class="table-group-divider">`;
+
+          processedChiSquaredTable.forEach(function (row, index) {
+            const isLastRow = index === processedChiSquaredTable.length - 1;
+            chiSquaredTableHTML += `
+            <tr>
+                <td>${row.limite_inferior.toFixed(2)}</td>
+                <td>${row.limite_superior.toFixed(2)}</td>
+                <td>${row.fo}</td>
+                <td>${row.fe.toFixed(2)}</td>
+                <td>${row.c.toFixed(2)}</td>
+                <td${
+                  isLastRow ? ' style="color: red; font-weight:bold"' : ""
+                }>${row.c_ac.toFixed(2)}</td>
+              </tr>`;
+          });
+
+          chiSquaredTableHTML += `</tbody></table>`;
+          $("#histogram").attr("src", response.histogram);
+          $("#chiSquareStat").text(response.chi_square_stat);
+          $("#kolmogorovStat").text(response.kolmogorovStat);
+          $("#loading").addClass("hidden");
+          $("#chiSquaredTableContainer").html(chiSquaredTableHTML);
+
+          updateTable(response.data);
+          $("#dataViewer").removeClass("hidden");
+          $("#results").removeClass("hidden");
+          $("#histogram").removeClass("hidden");
+          $("#tableSampleSize").text(response.sample_size);
+          $("#chiCritical").text(response.chi_critical);
+          $("#ksCritical").text(response.ks_critical);
+          $("#tableMin").text(response.min);
+          $("#tableMax").text(response.max);
+          $("#tableRange").text(response.range);
+          $("#tableAmplitude").text(response.bin_amplitude);
+          $("#tableMean").text(response.mean);
+          $("#summaryTable").removeClass("hidden");
+          updateResultsDisplay();
+        }
+      },
+      error: function (xhr, textStatus, errorThrown) {
+        alert("Hubo un error: " + xhr.responseText);
+        $("#loading").addClass("hidden");
+      }
+    });
+  }
+
+  function updateTable(data) {
+    generatedData = data;
+    currentPage = 0;
+    renderPage();
+  }
+
+  function renderPage() {
+    let start = currentPage * numPerPage;
+    let end = start + numPerPage;
+    let slicedData = generatedData.slice(start, end);
+    let tableBody = slicedData
+      .map(
+        (value, index) =>
+          `<tr><td>${start + index + 1}</td><td>${value}</td></tr>`
+      )
+      .join("");
+    $("#dataBody").html(tableBody);
+  }
+
+  function changePage(dir) {
+    let nextPage = currentPage + dir;
+    let totalPages = Math.ceil(generatedData.length / numPerPage);
+    if (nextPage >= 0 && nextPage < totalPages) {
+      currentPage = nextPage;
+      renderPage();
+    }
+  }
+  function updateResultsDisplay() {
+    // Retrieve the numeric values from the elements
+    var chiCalculated = parseFloat($("#chiSquareStat").text());
+    var chiTabulated = parseFloat($("#chiCritical").text());
+    var ksCalculated = parseFloat($("#kolmogorovStat").text());
+    var ksTabulated = parseFloat($("#ksCritical").text());
+
+    // Determine the result for Chi-squared test
+    if (chiCalculated > chiTabulated) {
+      $("#chiResult").text(" (Rechazar H0)");
+      $("#chiResult").addClass("significant");
+      $("#chiResult").removeClass("not-significant");
+    } else {
+      $("#chiResult").text(" (No se puede rechazar la hipótesis nula H0)");
+      $("#chiResult").addClass("not-significant");
+      $("#chiResult").removeClass("significant");
+    }
+
+    // Determine the result for Kolmogorov-Smirnov test
+    if (ksCalculated > ksTabulated) {
+      $("#ksResult").text(" (Rechazar H0)");
+      $("#ksResult").addClass("significant");
+      $("#ksResult").removeClass("not-significant");
+    } else {
+      $("#ksResult").text(" (No se puede rechazar la hipótesis nula H0)");
+      $("#ksResult").addClass("not-significant");
+      $("#ksResult").removeClass("significant");
+    }
+  }
+
+  updateParameters();
+</script>
+{%endblock%}

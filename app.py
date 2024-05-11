@@ -11,9 +11,22 @@ import math
 matplotlib.use("Agg")
 app = Flask(__name__)
 
+
 @app.route("/")
 def index():
     return render_template("index.html")
+
+
+@app.route("/tp2")
+def tp2():
+    return render_template("tp2.html")
+
+
+@app.errorhandler(404)
+def not_found(e):
+
+    return render_template("404.html")
+
 
 valores_criticos_ks = {
     1: 0.975,
@@ -55,26 +68,10 @@ valores_criticos_ks = {
 
 
 def valor_critico_chi2(df, alpha=0.05):
-    """
-    Calculate the critical value for the Chi-squared test for a given alpha level.
-
-    df: degrees of freedom
-    alpha: significance level (default 0.05)
-    """
     return stats.chi2.ppf(1 - alpha, df)
 
 
 def combinar_intervalos(observados, esperados):
-    """
-    Merge intervals to ensure all expected frequencies are at least 5.
-
-    Parameters:
-    o (np.array): observed frequencies
-    e (np.array): expected frequencies
-
-    Returns:
-    tuple: (merged observed frequencies, merged expected frequencies)
-    """
     combinado_observados = []
     combinado_esperados = []
 
@@ -128,12 +125,63 @@ def generar_tabla_ks(limites_intervalo, conteos, frecuencias_esperadas):
                 "Po(AC)": Po_acumulado[i],
                 "Pe(AC)": Pe_acumulado[i],
                 "|Po(AC)-Pe(AC)|": diferencias_absolutas[i],
-                "Max": (
-                    max_diferencia if i == len(limites_intervalo) - 2 else None
-                ),
+                "Max": (max_diferencia if i == len(limites_intervalo) - 2 else None),
             }
         )
     return tabla_ks
+
+
+def combine_chi_squared_rows(bin_edges, counts, expected_freqs, threshold=5):
+    combined_data = []
+    accumulated_fo = 0
+    accumulated_fe = 0
+    lower_bound = bin_edges[0]
+
+    for i in range(len(bin_edges) - 1):
+        accumulated_fo += counts[i]
+        accumulated_fe += expected_freqs[i]
+
+        # Revisar si la frecuencia esperada acumulada es mayor a 5
+        if accumulated_fe >= threshold:
+            upper_bound = bin_edges[i + 1]
+            # Si se cumple, finaliza este agrupamiento
+            c_value = ((accumulated_fe - accumulated_fo) ** 2) / accumulated_fe
+            combined_data.append(
+                {
+                    "limite_inferior": lower_bound,
+                    "limite_superior": upper_bound,
+                    "fo": accumulated_fo,
+                    "fe": accumulated_fe,
+                    "c": c_value,
+                }
+            )
+
+            # Crea un nuevo grupo
+            accumulated_fo = 0
+            accumulated_fe = 0
+            lower_bound = bin_edges[i + 1]
+
+    # Suma el último grupo si no fue sumado
+    if accumulated_fe > 0:
+        upper_bound = bin_edges[-1]
+        c_value = ((accumulated_fe - accumulated_fo) ** 2) / accumulated_fe
+        combined_data.append(
+            {
+                "limite_inferior": lower_bound,
+                "limite_superior": upper_bound,
+                "fo": accumulated_fo,
+                "fe": accumulated_fe,
+                "c": c_value,
+            }
+        )
+
+    # Recalcula el estadístico acumulado
+    cumulative = 0
+    for row in combined_data:
+        cumulative += row["c"]
+        row["c_ac"] = cumulative
+
+    return combined_data
 
 
 def obtener_valor_critico_ks(tamano_muestra):
@@ -143,12 +191,14 @@ def obtener_valor_critico_ks(tamano_muestra):
         return valores_criticos_ks[tamano_muestra]
     return 1.36 / np.sqrt(tamano_muestra)
 
+
 def chi_cuadrado_manual(observados, esperados):
     if any(f < 5 for f in esperados):
         observados, esperados = combinar_intervalos(observados, esperados)
 
     chi2 = np.sum((observados - esperados) ** 2 / esperados)
     return chi2
+
 
 def generador_uniforme(a, b, n):
     numeros_aleatorios = []
@@ -157,6 +207,7 @@ def generador_uniforme(a, b, n):
         numeros_aleatorios.append(numero_aleatorio)
     return numeros_aleatorios
 
+
 def generador_exponencial(escala, n):
     numeros_aleatorios = []
     for i in range(n):
@@ -164,6 +215,7 @@ def generador_exponencial(escala, n):
         numero_aleatorio = -escala * math.log(1 - num_aleatorio)
         numeros_aleatorios.append(numero_aleatorio)
     return numeros_aleatorios
+
 
 def generador_normal(mu, sigma, n):
     numeros_aleatorios = []
@@ -186,6 +238,7 @@ def generador_normal(mu, sigma, n):
 
     return numeros_aleatorios
 
+
 def estadistico_ks(observed_freq, expected_freq):
     cum_observed = np.cumsum(observed_freq) / np.sum(observed_freq)
     cum_expected = np.cumsum(expected_freq) / np.sum(expected_freq)
@@ -193,6 +246,7 @@ def estadistico_ks(observed_freq, expected_freq):
     ks = np.max(np.abs(cum_observed - cum_expected))
 
     return ks
+
 
 @app.route("/generate", methods=["POST"])
 def generar_numeros():
@@ -233,7 +287,7 @@ def generar_numeros():
             chi_critical = valor_critico_chi2(intervalos - 2, 0.05)
 
             data = generador_exponencial(scale, n)
-            upper_bound = stats.expon.ppf(0.99, scale=scale)  # 99th percentile
+            upper_bound = stats.expon.ppf(0.99, scale=scale)
             bin_edges = np.linspace(0, upper_bound, intervalos + 1)
 
             probFrecuenciasEspAc = stats.expon.cdf(bin_edges, scale=scale)
@@ -261,17 +315,21 @@ def generar_numeros():
         data = np.round(data, 4)
 
         # Generar histograma
+        plt.style.use('dark_background')
+
         fig, ax = plt.subplots()
+
         counts, bins, patches = ax.hist(
-            data, bins=bin_edges, color="blue", edgecolor="black"
+            data, bins=bin_edges, color="orange", edgecolor="black"
         )
+
         ax.set_xlabel("Valor")
         ax.set_ylabel("Frecuencia")
         plt.title("Histograma")
 
         # Histograma a PNG
         img = io.BytesIO()
-        plt.savefig(img, format="png")
+        plt.savefig(img, format='png', facecolor=fig.get_facecolor(), edgecolor='none')
         plt.close()
         img.seek(0)
         plot_url = base64.b64encode(img.getvalue()).decode("utf8")
@@ -281,31 +339,20 @@ def generar_numeros():
 
         # Prueba de bondad de ajuste
         try:
-            chi2_stat = chi_cuadrado_manual(counts, frecuenciasEsperadas)
+            chi_squared_table = combine_chi_squared_rows(
+                bin_edges, counts, frecuenciasEsperadas
+            )
+            chi2_stat = sum(row["c"] for row in chi_squared_table)
         except ValueError as e:
             return jsonify({"error": str(e)}), 400
 
         chi2_stat_scipy, chi2_p_scipy = stats.chisquare(
             counts, f_exp=frecuenciasEsperadas
         )
-        # Calcular Ks..
-        ksCalculado = estadistico_ks(counts, frecuenciasEsperadas)            
-
-        c_values = (frecuenciasEsperadas - counts) ** 2 / frecuenciasEsperadas
-        c_ac_values = np.cumsum(c_values)
-
-        # Build rows for the Chi-squared table
-        chi_squared_table = []
-        for i in range(len(bin_edges) - 1):
-            row = {
-                "limite_inferior": bin_edges[i],
-                "limite_superior": bin_edges[i + 1],
-                "fo": counts[i],
-                "fe": frecuenciasEsperadas[i],
-                "c": c_values[i],
-                "c_ac": c_ac_values[i],
-            }
-            chi_squared_table.append(row)
+        print(
+            "Chi2 manual:", chi2_stat, "Chi2 scipy:", chi2_stat_scipy
+        )  # falla si n < 50
+        ksCalculado = estadistico_ks(counts, frecuenciasEsperadas)
 
         ks_table = generar_tabla_ks(bin_edges, counts, frecuenciasEsperadas)
 
