@@ -1,5 +1,162 @@
 {%block content%}
+    <h1>Inventory Simulation</h1>
+    <form id="simulationForm">
+        <h3>Demand Values and Probabilities</h3>
+        <table id="demandTable">
+            <tr>
+                <th>Demand Value</th>
+                <th>Probability</th>
+            </tr>
+            <tr>
+                <td><input type="number" name="demand_value" value="0"></td>
+                <td><input type="number" step="0.01" name="demand_prob" value="0.05"></td>
+            </tr>
+            <tr>
+                <td><input type="number" name="demand_value" value="1"></td>
+                <td><input type="number" step="0.01" name="demand_prob" value="0.20"></td>
+            </tr>
+            <tr>
+                <td><input type="number" name="demand_value" value="2"></td>
+                <td><input type="number" step="0.01" name="demand_prob" value="0.40"></td>
+            </tr>
+            <tr>
+                <td><input type="number" name="demand_value" value="3"></td>
+                <td><input type="number" step="0.01" name="demand_prob" value="0.15"></td>
+            </tr>
+            <tr>
+                <td><input type="number" name="demand_value" value="4"></td>
+                <td><input type="number" step="0.01" name="demand_prob" value="0.10"></td>
+            </tr>
+            <tr>
+                <td><input type="number" name="demand_value" value="5"></td>
+                <td><input type="number" step="0.01" name="demand_prob" value="0.05"></td>
+            </tr>
+            <tr>
+                <td><input type="number" name="demand_value" value="6"></td>
+                <td><input type="number" step="0.01" name="demand_prob" value="0.05"></td>
+            </tr>
+        </table>
+        <button type="button" onclick="addRow('demandTable')">Add Row</button>
+        <br><br>
 
-{% include '404.html'%}
+        <h3>Advance Values and Probabilities</h3>
+        <table id="advanceTable">
+            <tr>
+                <th>Advance Value</th>
+                <th>Probability</th>
+            </tr>
+            <tr>
+                <td><input type="number" name="advance_value" value="0"></td>
+                <td><input type="number" step="0.01" name="advance_prob" value="0.10"></td>
+            </tr>
+            <tr>
+                <td><input type="number" name="advance_value" value="1"></td>
+                <td><input type="number" step="0.01" name="advance_prob" value="0.25"></td>
+            </tr>
+            <tr>
+                <td><input type="number" name="advance_value" value="2"></td>
+                <td><input type="number" step="0.01" name="advance_prob" value="0.60"></td>
+            </tr>
+            <tr>
+                <td><input type="number" name="advance_value" value="3"></td>
+                <td><input type="number" step="0.01" name="advance_prob" value="0.05"></td>
+            </tr>
+        </table>
+        <button type="button" onclick="addRow('advanceTable')">Add Row</button>
+        <br><br>
+
+        <label for="initial_inventory">Initial Inventory:</label>
+        <input type="number" id="initial_inventory" name="initial_inventory" value="28"><br>
+        <label for="order_quantity">Order Quantity:</label>
+        <input type="number" id="order_quantity" name="order_quantity" value="15"><br>
+        <label for="holding_cost_per_unit_per_week">Holding Cost per Unit per Week:</label>
+        <input type="number" id="holding_cost_per_unit_per_week" name="holding_cost_per_unit_per_week" value="10"><br>
+        <label for="ordering_cost">Ordering Cost:</label>
+        <input type="number" id="ordering_cost" name="ordering_cost" value="200"><br>
+        <label for="stockout_cost_per_unit">Stockout Cost per Unit:</label>
+        <input type="number" id="stockout_cost_per_unit" name="stockout_cost_per_unit" value="50"><br>
+        <label for="num_weeks">Number of Weeks:</label>
+        <input type="number" id="num_weeks" name="num_weeks" value="18"><br>
+        <label for="days_per_week">Days per Week:</label>
+        <input type="number" id="days_per_week" name="days_per_week" value="7"><br>
+        <button type="submit">Run Simulation</button>
+    </form>
+    <div id="results"></div>
+    <script>
+        function addRow(tableId) {
+            var table = document.getElementById(tableId);
+            var row = table.insertRow();
+            var cell1 = row.insertCell(0);
+            var cell2 = row.insertCell(1);
+            cell1.innerHTML = '<input type="number" name="' + tableId.slice(0, -5) + '_value">';
+            cell2.innerHTML = '<input type="number" step="0.01" name="' + tableId.slice(0, -5) + '_prob">';
+        }
+
+        document.getElementById('simulationForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            var demand_values = Array.from(document.getElementsByName('demand_value')).map(input => Number(input.value));
+            var demand_prob = Array.from(document.getElementsByName('demand_prob')).map(input => Number(input.value));
+            var advance_values = Array.from(document.getElementsByName('advance_value')).map(input => Number(input.value));
+            var advance_prob = Array.from(document.getElementsByName('advance_prob')).map(input => Number(input.value));
+
+            const formData = {
+                demand_values: demand_values,
+                demand_prob: demand_prob,
+                advance_values: advance_values,
+                advance_prob: advance_prob,
+                initial_inventory: Number(document.getElementById('initial_inventory').value),
+                order_quantity: Number(document.getElementById('order_quantity').value),
+                holding_cost_per_unit_per_week: Number(document.getElementById('holding_cost_per_unit_per_week').value),
+                ordering_cost: Number(document.getElementById('ordering_cost').value),
+                stockout_cost_per_unit: Number(document.getElementById('stockout_cost_per_unit').value),
+                num_weeks: Number(document.getElementById('num_weeks').value),
+                days_per_week: Number(document.getElementById('days_per_week').value)
+            };
+
+            fetch('/simulate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
+            })
+            .then(response => response.json())
+            .then(data => {
+                let tableHTML = '<table border="1"><tr><th>Day</th><th>Day Number</th><th>Random Demand</th><th>Demand</th><th>Stock</th><th>Order Placed</th><th>Random Advance</th><th>Days in Advance</th><th>Holding Cost</th><th>Ordering Cost</th><th>Stockout Cost</th></tr>';
+                data.table.forEach(row => {
+                    tableHTML += `<tr>
+                        <td>${row.day}</td>
+                        <td>${row.day_num}</td>
+                        <td>${row.rnd_demand}</td>
+                        <td>${row.demand}</td>
+                        <td>${row.stock}</td>
+                        <td>${row.order_placed}</td>
+                        <td>${row.rnd_advance}</td>
+                        <td>${row.days_in_advance}</td>
+                        <td>${row.holding_cost}</td>
+                        <td>${row.ordering_cost}</td>
+                        <td>${row.stockout_cost}</td>
+                    </tr>`;
+                });
+                tableHTML += '</table>';
+
+                document.getElementById('results').innerHTML = `
+                    <h2>Results</h2>
+                    <p>Total Holding Cost: $${data.total_holding_cost.toFixed(2)}</p>
+                    <p>Total Ordering Cost: $${data.total_ordering_cost.toFixed(2)}</p>
+                    <p>Total Stockout Cost: $${data.total_stockout_cost.toFixed(2)}</p>
+                    <p>Total Cost: $${data.total_cost.toFixed(2)}</p>
+                    <p>Average Holding Cost per Day: $${data.average_holding_cost.toFixed(2)}</p>
+                    <p>Average Ordering Cost per Day: $${data.average_ordering_cost.toFixed(2)}</p>
+                    <p>Average Stockout Cost per Day: $${data.average_stockout_cost.toFixed(2)}</p>
+                    <p>Average Total Cost per Day: $${data.average_total_cost.toFixed(2)}</p>
+                    ${tableHTML}
+                `;
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    </script>
+
 
 {% endblock %}
