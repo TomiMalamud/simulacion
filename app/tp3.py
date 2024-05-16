@@ -32,8 +32,7 @@ def simulate():
 
     for dia in range(num_dias):
         nombre_dia = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"][dia % dias_por_semana]
-        rnd_demanda = round(random.random(), 2)
-        demanda_diaria = random.choices(valores_demanda, weights=prob_demanda, k=1)[0]
+        demanda_diaria, rnd_demanda = calcular_demanda(valores_demanda, prob_demanda) 
 
         # Update inventory with today's deliveries
         entregas_para_hoy = [cantidad for entrega_dia, cantidad in entregas_pendientes if entrega_dia == dia]
@@ -55,9 +54,8 @@ def simulate():
         # Order placement logic
         pedido_realizado = False
         if (politica == 'A' and nombre_dia == "Lunes") or (politica == 'B' and inventario <= 5 and dia >= next_inventory_check):
-            rnd_adelanto = round(random.random(), 2)
-            adelanto = random.choices(valores_adelanto, weights=prob_adelanto, k=1)[0]
-            entrega_dia = dia + 5 - adelanto
+            adelanto, rnd_adelanto = calcular_adelanto(valores_adelanto, prob_adelanto) 
+            entrega_dia = dia + 4 - adelanto
             entregas_pendientes.append((entrega_dia, cantidad_pedido))
             next_inventory_check = entrega_dia
             pedido_realizado = True
@@ -93,7 +91,22 @@ def simulate():
 
     return jsonify(resultado)
 
+
 def calcular_adelanto(valores_adelanto, prob_adelanto):
-    rnd_adelanto = round(random.random(), 2)
-    adelanto = random.choices(valores_adelanto, weights=prob_adelanto, k=1)[0]
-    return adelanto, rnd_adelanto
+    rnd_adelanto = round(random.random(),2)
+    # Acumula las probabilidades para encontrar el valor correspondiente
+    acumulado = 0
+    for demanda, probabilidad in zip(valores_adelanto, prob_adelanto):
+        acumulado += probabilidad
+        if rnd_adelanto < acumulado:
+            return demanda, rnd_adelanto
+    return valores_adelanto[-1], rnd_adelanto
+
+def calcular_demanda(valores_demanda, prob_demanda):
+    rnd_demanda = round(random.random(), 2)
+    acumulado = 0
+    for demanda, probabilidad in zip(valores_demanda, prob_demanda):
+        acumulado += probabilidad
+        if rnd_demanda < acumulado:
+            return demanda, rnd_demanda
+    return valores_demanda[-1], rnd_demanda
