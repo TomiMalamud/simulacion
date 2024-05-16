@@ -1,13 +1,20 @@
-{% block content %}
+{% extends 'base.html' %}{% block content %}
+<div class="container p-5 w-75">
+
 <h1>Simulación de Inventario</h1>
 <form id="simulationForm">
+    <div class="row g-3 align-items-center">
+        <div class="col-auto">
     <label for="policy">Política (A o B):</label>
-    <select id="policy" name="policy" required>
+        </div>
+    <select id="policy" class="form-select" style="width:100px" name="policy" required>
         <option value="A">A</option>
         <option value="B">B</option>
-    </select><br>
+    </select>
+</div>
+    <br>
 
-    <h3>Valores y Probabilidades de Demanda</h3>
+    <h3 class="mb-4">Valores y Probabilidades de Demanda</h3>
     <table id="demandTable">
         <tr>
             <th>Valor de Demanda</th>
@@ -16,49 +23,49 @@
             <th>Límite Superior</th>
         </tr>
         <tr>
-            <td><input type="number" name="demand_value" value="0"></td>
-            <td><input type="number" step="0.01" name="demand_prob" value="0.05"></td>
-            <td><input type="number" name="demand_lower" disabled></td>
-            <td><input type="number" name="demand_upper" disabled></td>
+            <td><input class="form-control" type="number" name="demand_value" value="0"></td>
+            <td><input class="form-control" type="number" step="0.01" name="demand_prob" value="0.05"></td>
+            <td><input class="form-control" type="number" name="demand_lower" disabled></td>
+            <td><input class="form-control" type="number" name="demand_upper" disabled></td>
         </tr>
         <tr>
-            <td><input type="number" name="demand_value" value="1"></td>
-            <td><input type="number" step="0.01" name="demand_prob" value="0.20"></td>
-            <td><input type="number" name="demand_lower" disabled></td>
-            <td><input type="number" name="demand_upper" disabled></td>
+            <td><input class="form-control" type="number" name="demand_value" value="1"></td>
+            <td><input class="form-control" type="number" step="0.01" name="demand_prob" value="0.20"></td>
+            <td><input class="form-control" type="number" name="demand_lower" disabled></td>
+            <td><input class="form-control" type="number" name="demand_upper" disabled></td>
         </tr>
         <tr>
-            <td><input type="number" name="demand_value" value="2"></td>
-            <td><input type="number" step="0.01" name="demand_prob" value="0.40"></td>
-            <td><input type="number" name="demand_lower" disabled></td>
-            <td><input type="number" name="demand_upper" disabled></td>
+            <td><input class="form-control" type="number" name="demand_value" value="2"></td>
+            <td><input class="form-control" type="number" step="0.01" name="demand_prob" value="0.40"></td>
+            <td><input class="form-control" type="number" name="demand_lower" disabled></td>
+            <td><input class="form-control" type="number" name="demand_upper" disabled></td>
         </tr>
         <tr>
-            <td><input type="number" name="demand_value" value="3"></td>
-            <td><input type="number" step="0.01" name="demand_prob" value="0.15"></td>
-            <td><input type="number" name="demand_lower" disabled></td>
-            <td><input type="number" name="demand_upper" disabled></td>
+            <td><input class="form-control" type="number" name="demand_value" value="3"></td>
+            <td><input class="form-control" type="number" step="0.01" name="demand_prob" value="0.15"></td>
+            <td><input class="form-control" type="number" name="demand_lower" disabled></td>
+            <td><input class="form-control" type="number" name="demand_upper" disabled></td>
         </tr>
         <tr>
-            <td><input type="number" name="demand_value" value="4"></td>
-            <td><input type="number" step="0.01" name="demand_prob" value="0.10"></td>
-            <td><input type="number" name="demand_lower" disabled></td>
-            <td><input type="number" name="demand_upper" disabled></td>
+            <td><input class="form-control" type="number" name="demand_value" value="4"></td>
+            <td><input class="form-control" type="number" step="0.01" name="demand_prob" value="0.10"></td>
+            <td><input class="form-control" type="number" name="demand_lower" disabled></td>
+            <td><input class="form-control" type="number" name="demand_upper" disabled></td>
         </tr>
         <tr>
-            <td><input type="number" name="demand_value" value="5"></td>
-            <td><input type="number" step="0.01" name="demand_prob" value="0.05"></td>
-            <td><input type="number" name="demand_lower" disabled></td>
-            <td><input type="number" name="demand_upper" disabled></td>
+            <td><input class="form-control" type="number" name="demand_value" value="5"></td>
+            <td><input class="form-control" type="number" step="0.01" name="demand_prob" value="0.05"></td>
+            <td><input class="form-control" type="number" name="demand_lower" disabled></td>
+            <td><input class="form-control" type="number" name="demand_upper" disabled></td>
         </tr>
         <tr>
-            <td><input type="number" name="demand_value" value="6"></td>
-            <td><input type="number" step="0.01" name="demand_prob" value="0.05"></td>
-            <td><input type="number" name="demand_lower" disabled></td>
-            <td><input type="number" name="demand_upper" disabled></td>
+            <td><input class="form-control" type="number" name="demand_value" value="6"></td>
+            <td><input class="form-control" type="number" step="0.01" name="demand_prob" value="0.05"></td>
+            <td><input class="form-control" type="number" name="demand_lower" disabled></td>
+            <td><input class="form-control" type="number" name="demand_upper" disabled></td>
         </tr>
     </table>
-    <button type="button" onclick="addRow('demandTable')">Agregar Fila</button>
+    <button class="btn btn-light mt-2" type="button" onclick="addRow('demandTable')">Agregar Fila</button>
     <br><br>
 
     <h3>Valores y Probabilidades de Adelanto</h3>
@@ -69,53 +76,74 @@
             <th>Límite Inferior</th>
             <th>Límite Superior</th>
         </tr>
-        <tr>
-            <td><input type="number" name="advance_value" value="0"></td>
-            <td><input type="number" step="0.01" name="advance_prob" value="0.10"></td>
-            <td><input type="number" name="advance_lower" disabled></td>
-            <td><input type="number" name="advance_upper" disabled></td>
+        <tr class="">
+            <td><input class="form-control" type="number" name="advance_value" value="0"></td>
+            <td><input class="form-control" type="number" step="0.01" name="advance_prob" value="0.10"></td>
+            <td><input class="form-control" type="number" name="advance_lower" disabled></td>
+            <td><input class="form-control" type="number" name="advance_upper" disabled></td>
         </tr>
         <tr>
-            <td><input type="number" name="advance_value" value="1"></td>
-            <td><input type="number" step="0.01" name="advance_prob" value="0.25"></td>
-            <td><input type="number" name="advance_lower" disabled></td>
-            <td><input type="number" name="advance_upper" disabled></td>
+            <td><input class="form-control" type="number" name="advance_value" value="1"></td>
+            <td><input class="form-control" type="number" step="0.01" name="advance_prob" value="0.25"></td>
+            <td><input class="form-control" type="number" name="advance_lower" disabled></td>
+            <td><input class="form-control" type="number" name="advance_upper" disabled></td>
         </tr>
         <tr>
-            <td><input type="number" name="advance_value" value="2"></td>
-            <td><input type="number" step="0.01" name="advance_prob" value="0.60"></td>
-            <td><input type="number" name="advance_lower" disabled></td>
-            <td><input type="number" name="advance_upper" disabled></td>
+            <td><input class="form-control" type="number" name="advance_value" value="2"></td>
+            <td><input class="form-control" type="number" step="0.01" name="advance_prob" value="0.60"></td>
+            <td><input class="form-control" type="number" name="advance_lower" disabled></td>
+            <td><input class="form-control" type="number" name="advance_upper" disabled></td>
         </tr>
         <tr>
-            <td><input type="number" name="advance_value" value="3"></td>
-            <td><input type="number" step="0.01" name="advance_prob" value="0.05"></td>
-            <td><input type="number" name="advance_lower" disabled></td>
-            <td><input type="number" name="advance_upper" disabled></td>
+            <td><input class="form-control" type="number" name="advance_value" value="3"></td>
+            <td><input class="form-control" type="number" step="0.01" name="advance_prob" value="0.05"></td>
+            <td><input class="form-control" type="number" name="advance_lower" disabled></td>
+            <td><input class="form-control" type="number" name="advance_upper" disabled></td>
         </tr>
     </table>
-    <button type="button" onclick="addRow('advanceTable')">Agregar Fila</button>
+    <button class="btn btn-light mt-2" type="button" onclick="addRow('advanceTable')">Agregar Fila</button>
     <br><br>
 
-    <label for="initial_inventory">Inventario Inicial:</label>
-    <input type="number" id="initial_inventory" name="initial_inventory" value="28"><br>
-    <label for="order_quantity">Cantidad de Pedido:</label>
-    <input type="number" id="order_quantity" name="order_quantity" value="15"><br>
-    <label for="holding_cost_per_unit_per_week">Costo de Almacenamiento por Unidad por Semana:</label>
-    <input type="number" id="holding_cost_per_unit_per_week" name="holding_cost_per_unit_per_week" value="10"><br>
-    <label for="ordering_cost">Costo de Pedido:</label>
-    <input type="number" id="ordering_cost" name="ordering_cost" value="200"><br>
-    <label for="stockout_cost_per_unit">Costo de Desabastecimiento por Unidad:</label>
-    <input type="number" id="stockout_cost_per_unit" name="stockout_cost_per_unit" value="50"><br>
-    <label for="num_weeks">Número de Semanas:</label>
-    <input type="number" id="num_weeks" name="num_weeks" value="18"><br>
-    <label for="days_per_week">Días por Semana:</label>
-    <input type="number" id="days_per_week" name="days_per_week" value="7"><br>
-    <button type="submit">Ejecutar Simulación</button>
-</form>
+    <div class="rounded border vw-100 border-dark-subtle bg-secondary-subtle p-4 mt-5 row">
+        <div class="col-md-6">
+            <div class="form-group mb-3">
+                <label for="initial_inventory">Inventario Inicial:</label>
+                <input class="form-control" type="number" id="initial_inventory" name="initial_inventory" value="28" aria-label="Inventario inicial">
+            </div>
+            <div class="form-group mb-3">
+                <label for="order_quantity">Cantidad de Pedido:</label>
+                <input class="form-control" type="number" id="order_quantity" name="order_quantity" value="15" aria-label="Cantidad de pedido">
+            </div>
+            <div class="form-group mb-3">
+                <label for="holding_cost_per_unit_per_week">Costo de Almacenamiento por Unidad por Semana:</label>
+                <input class="form-control" type="number" id="holding_cost_per_unit_per_week" name="holding_cost_per_unit_per_week" value="10" aria-label="Costo de almacenamiento por unidad por semana">
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group mb-3">
+                <label for="ordering_cost">Costo de Pedido:</label>
+                <input class="form-control" type="number" id="ordering_cost" name="ordering_cost" value="200" aria-label="Costo de pedido">
+            </div>
+            <div class="form-group mb-3">
+                <label for="stockout_cost_per_unit">Costo de Desabastecimiento por Unidad:</label>
+                <input class="form-control" type="number" id="stockout_cost_per_unit" name="stockout_cost_per_unit" value="50" aria-label="Costo de desabastecimiento por unidad">
+            </div>
+            <div class="form-group mb-3">
+                <label for="num_weeks">Número de Semanas:</label>
+                <input class="form-control" type="number" id="num_weeks" name="num_weeks" value="18" aria-label="Número de semanas">
+            </div>
+            <div class="form-group mb-3">
+                <label for="days_per_week">Días por Semana:</label>
+                <input class="form-control" type="number" id="days_per_week" name="days_per_week" value="7" aria-label="Días por semana">
+            </div>
+        </div>
+        <div class="col-12 mt-4">
+            <button type="submit" class="btn w-100 btn-light">Ejecutar Simulación</button>
+        </div>
+    </div></form>
 
-<div id="results"></div>
-
+<div class="mt-5" id="results"></div>
+</div>
 <script>
     function addRow(tableId) {
         var table = document.getElementById(tableId);
@@ -124,10 +152,10 @@
         var cell2 = row.insertCell(1);
         var cell3 = row.insertCell(2);
         var cell4 = row.insertCell(3);
-        cell1.innerHTML = '<input type="number" name="' + tableId.slice(0, -5) + '_value">';
-        cell2.innerHTML = '<input type="number" step="0.01" name="' + tableId.slice(0, -5) + '_prob" oninput="updateLimits(\'' + tableId + '\')">';
-        cell3.innerHTML = '<input type="number" name="' + tableId.slice(0, -5) + '_lower" disabled>';
-        cell4.innerHTML = '<input type="number" name="' + tableId.slice(0, -5) + '_upper" disabled>';
+        cell1.innerHTML = '<input class="form-control" type="number" name="' + tableId.slice(0, -5) + '_value">';
+        cell2.innerHTML = '<input class="form-control" type="number" step="0.01" name="' + tableId.slice(0, -5) + '_prob" oninput="updateLimits(\'' + tableId + '\')">';
+        cell3.innerHTML = '<input class="form-control" type="number" name="' + tableId.slice(0, -5) + '_lower" disabled>';
+        cell4.innerHTML = '<input class="form-control" type="number" name="' + tableId.slice(0, -5) + '_upper" disabled>';
         updateLimits(tableId);
     }
     
@@ -189,7 +217,7 @@
         })
         .then(response => response.json())
         .then(data => {
-            let tableHTML = '<table border="1"><tr><th>Día</th><th>Número de Día</th><th>RND Demanda</th><th>Demanda</th><th>Inventario</th><th>Pedido Realizado</th><th>RND Adelanto</th><th>Días de Adelanto</th><th>Costo de Almacenamiento</th><th>Costo de Pedido</th><th>Costo de Desabastecimiento</th><th>Costos Totales</th><th>Costos Acumulados</th><th>Costo Promedio Diario</th></tr>';
+            let tableHTML = '<table class="table"><thead><tr><th>Día</th><th>Número de Día</th><th>RND Demanda</th><th>Demanda</th><th>Inventario</th><th>Pedido Realizado</th><th>RND Adelanto</th><th>Días de Adelanto</th><th>Costo de Almacenamiento</th><th>Costo de Pedido</th><th>Costo de Desabastecimiento</th><th>Costos Totales</th><th>Costos Acumulados</th><th>Costo Promedio Diario</th></tr></thead>';
             data.tabla.forEach(row => {
                 tableHTML += `<tr>
                     <td>${row.dia}</td>
