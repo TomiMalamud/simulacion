@@ -30,7 +30,14 @@ def simulate():
     entregas_pendientes = []
     tabla = []
 
+    f_des = False
+    dias_des = 0
+    acum_des = 0
+
     for dia in range(num_dias):
+
+
+
         nombre_dia = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"][dia % dias_por_semana]
         demanda_diaria, rnd_demanda = calcular_demanda(valores_demanda, prob_demanda) 
 
@@ -40,10 +47,22 @@ def simulate():
             inventario += sum(entregas_para_hoy)
         entregas_pendientes = [(entrega_dia, cantidad) for entrega_dia, cantidad in entregas_pendientes if entrega_dia > dia]
 
+
+        if f_des == True:
+            dias_des += 1
+
+        if dias_des == 7:
+            dias_des = 0
+            f_des = False
+            costo_desabastecimiento = acum_des
+            acum_des = 0
+        else:
+            costo_desabastecimiento = 0
+
         # Demand processing
-        costo_desabastecimiento = 0
         if inventario < demanda_diaria:
-            costo_desabastecimiento = (demanda_diaria - inventario) * costo_desabastecimiento_por_unidad
+            f_des = True
+            acum_des += (demanda_diaria - inventario) * costo_desabastecimiento_por_unidad
             inventario = 0
         else:
             inventario -= demanda_diaria
