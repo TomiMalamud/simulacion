@@ -115,47 +115,59 @@
     <button class="btn btn-light mt-2" type="button" onclick="addRow('advanceTable')">Agregar Fila</button>
     <br><br>
 
-    <div class="rounded border vw-100 border-dark-subtle bg-secondary-subtle p-4 mt-5 row">
+    <div class="rounded border border-dark-subtle bg-secondary-subtle p-4 mt-5 row">
         <div class="col-md-6">
             <div class="form-group mb-3">
-                <label for="initial_inventory">Inventario Inicial:</label>
-                <input class="form-control" type="number" id="initial_inventory" name="initial_inventory" value="28" aria-label="Inventario inicial">
+                <label for="initial_inventory">Inventario Inicial</label>
+                <input class="form-control mt-1" type="number" id="initial_inventory" name="initial_inventory" value="28" aria-label="Inventario inicial">
             </div>
             <div class="form-group mb-3">
-                <label for="order_quantity">Cantidad de Pedido:</label>
-                <input class="form-control" type="number" id="order_quantity" name="order_quantity" value="15" aria-label="Cantidad de pedido">
+                <label for="order_quantity">Cantidad de Pedido</label>
+                <input class="form-control mt-1" type="number" id="order_quantity" name="order_quantity" value="15" aria-label="Cantidad de pedido">
             </div>
             <div class="form-group mb-3">
                 <label for="holding_cost_per_unit_per_week">Costo de Almacenamiento por Unidad por Semana:</label>
-                <input class="form-control" type="number" id="holding_cost_per_unit_per_week" name="holding_cost_per_unit_per_week" value="10" aria-label="Costo de almacenamiento por unidad por semana">
+                <input class="form-control mt-1" type="number" id="holding_cost_per_unit_per_week" name="holding_cost_per_unit_per_week" value="10" aria-label="Costo de almacenamiento por unidad por semana">
             </div>
         </div>
         <div class="col-md-6">
             <div class="form-group mb-3">
-                <label for="ordering_cost">Costo de Pedido:</label>
-                <input class="form-control" type="number" id="ordering_cost" name="ordering_cost" value="200" aria-label="Costo de pedido">
+                <label for="ordering_cost">Costo de Pedido</label>
+                <input class="form-control mt-1" type="number" id="ordering_cost" name="ordering_cost" value="200" aria-label="Costo de pedido">
             </div>
             <div class="form-group mb-3">
-                <label for="stockout_cost_per_unit">Costo de Desabastecimiento por Unidad:</label>
-                <input class="form-control" type="number" id="stockout_cost_per_unit" name="stockout_cost_per_unit" value="50" aria-label="Costo de desabastecimiento por unidad">
+                <label for="stockout_cost_per_unit">Costo de Desabastecimiento por Unidad</label>
+                <input class="form-control mt-1" type="number" id="stockout_cost_per_unit" name="stockout_cost_per_unit" value="50" aria-label="Costo de desabastecimiento por unidad">
             </div>
-            <div class="form-group mb-3">
-                <label for="num_weeks">Número de Semanas:</label>
-                <input class="form-control" type="number" id="num_weeks" name="num_weeks" value="18" aria-label="Número de semanas">
+            <div class="row">
+            <div class="form-group col-6 mb-3">
+                <label for="num_weeks">Número de Semanas</label>
+                <input class="form-control mt-1" type="number" id="num_weeks" name="num_weeks" value="18" aria-label="Número de semanas">
             </div>
-            <div class="form-group mb-3">
-                <label for="days_per_week">Días por Semana:</label>
-                <input class="form-control" type="number" id="days_per_week" name="days_per_week" value="7" aria-label="Días por semana">
-            </div>
+            <div class="form-group col-6 mb-3">
+                <label for="days_per_week">Días por Semana</label>
+                <input class="form-control mt-1" type="number" id="days_per_week" name="days_per_week" value="7" aria-label="Días por semana">
+            </div></div>
         </div>
         <div class="col-12 mt-4">
             <button type="submit" class="btn w-100 btn-light">Ejecutar Simulación</button>
         </div>
     </div></form>
 
-<div class="mt-5" id="results"></div>
 </div>
+<div class="mt-5 p-5" id="results"></div>
 <script>
+    function validateNonNegativeValues() {
+        const inputs = document.querySelectorAll('input[type="number"]');
+        for (let input of inputs) {
+            if (input.value < 0) {
+                alert('El valor no puede ser negativo: ' + input.labels[0].innerText);
+                return false;
+            }
+        }
+        return true;
+    }
+    
     function addRow(tableId) {
         var table = document.getElementById(tableId);
         var row = table.insertRow();
@@ -195,24 +207,28 @@
 
     document.getElementById('simulationForm').addEventListener('submit', function(event) {
         event.preventDefault();
-
+    
+        if (!validateNonNegativeValues()) {
+            return; // Stop the form submission if validation fails
+        }
+    
         var demand_values = Array.from(document.getElementsByName('demand_value')).map(input => Number(input.value));
         var demand_prob = Array.from(document.getElementsByName('demand_prob')).map(input => Number(input.value));
         var advance_values = Array.from(document.getElementsByName('advance_value')).map(input => Number(input.value));
         var advance_prob = Array.from(document.getElementsByName('advance_prob')).map(input => Number(input.value));
-
+    
         // Validate if the sum of probabilities is exactly 1
         var totalDemandProb = demand_prob.reduce((sum, value) => sum + value, 0);
         var totalAdvanceProb = advance_prob.reduce((sum, value) => sum + value, 0);
-
+    
         if (totalDemandProb !== 1 || totalAdvanceProb !== 1) {
             alert('La suma de todas las probabilidades debe ser exactamente 1.');
             return;
         }
-
+    
         updateLimits('demandTable'); // Ensure limits are updated before form submission
         updateLimits('advanceTable');
-
+    
         const formData = {
             politica: document.getElementById('policy').value,
             valores_demanda: demand_values,
@@ -227,7 +243,7 @@
             num_semanas: Number(document.getElementById('num_weeks').value),
             dias_por_semana: Number(document.getElementById('days_per_week').value)
         };
-
+    
         fetch('/simulate', {
             method: 'POST',
             headers: {
@@ -257,7 +273,7 @@
                 </tr>`;
             });
             tableHTML += '</table>';
-
+    
             document.getElementById('results').innerHTML = `
                 <h2>Resultados</h2>
                 <p>Costo Total: $${data.costo_total.toFixed(2)}</p>
@@ -267,7 +283,7 @@
         })
         .catch(error => console.error('Error:', error));
     });
-
+    
     document.addEventListener('DOMContentLoaded', () => {
         updateLimits('demandTable');
         updateLimits('advanceTable');
