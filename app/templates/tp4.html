@@ -1,5 +1,150 @@
 {%extends 'base.html'%} {%block content%}
 
-{% include '404.html' %}
+<table class="table table-bordered">
+  <thead class="text-center">
+    <tr>
+      <th rowspan="3">Event</th>
+      <th rowspan="3">Clock (min)</th>
+      <th colspan="3">Check-in Arrival</th>
+      <th colspan="3">Security Arrival</th>
+      <th colspan="3">Passport Arrival</th>
+      <th colspan="3">Boarding Arrival</th>
+      <th colspan="3">End Check-in</th>
+      <th colspan="3">End Security</th>
+      <th colspan="3">End Passport</th>
+      <th colspan="3">End Boarding</th>
+      <th colspan="4">Check-in</th>
+      <th colspan="3">Security</th>
+      <th colspan="3">Passport</th>
+      <th colspan="4">Boarding</th>
+      <th rowspan="3">AC Waiting Time Check-in</th>
+      <th rowspan="3">Passengers Waited Check-in</th>
+      <th rowspan="3">AC Waiting Time Security</th>
+      <th rowspan="3">Passengers Waited Security</th>
+      <th rowspan="3">AC Waiting Time Passport</th>
+      <th rowspan="3">Passengers Waited Passport</th>
+      <th rowspan="3">AC Waiting Time Boarding</th>
+      <th rowspan="3">Passengers Waited Boarding</th>
+      <th colspan="9">Passenger</th>
+    </tr>
+    <tr>
+      <th rowspan="2">Rnd</th>
+      <th rowspan="2">Time Between Arrivals</th>
+      <th rowspan="2">Next Arrival</th>
+      <th rowspan="2">Rnd</th>
+      <th rowspan="2">Time Between Arrivals</th>
+      <th rowspan="2">Next Arrival</th>
+      <th rowspan="2">Rnd</th>
+      <th rowspan="2">Time Between Arrivals</th>
+      <th rowspan="2">Next Arrival</th>
+      <th rowspan="2">Rnd</th>
+      <th rowspan="2">Time Between Arrivals</th>
+      <th rowspan="2">Next Arrival</th>
+      <th rowspan="2">Rnd</th>
+      <th rowspan="2">Time of Attention</th>
+      <th rowspan="2">End Check-in</th>
+      <th rowspan="2">Rnd</th>
+      <th rowspan="2">Time of Attention</th>
+      <th rowspan="2">End Security</th>
+      <th rowspan="2">Rnd</th>
+      <th rowspan="2">Time of Attention</th>
+      <th rowspan="2">End Passport</th>
+      <th rowspan="2">Rnd</th>
+      <th rowspan="2">Time of Attention</th>
+      <th rowspan="2">End Boarding</th>
+      <th>1</th>
+      <th>2</th>
+      <th>3</th>
+      <th rowspan="2">Queue</th>
+      <th>1</th>
+      <th>2</th>
+      <th rowspan="2">Queue</th>
+      <th>1</th>
+      <th>2</th>
+      <th rowspan="2">Queue</th>
+      <th>1</th>
+      <th>2</th>
+      <th>3</th>
+      <th rowspan="2">Queue</th>
+      <th>Passenger 1</th>
+      <th>Passenger 2</th>
+      <th>Passenger 3</th>
+      <!-- Add more passenger columns as needed -->
+    </tr>
+    <tr>
+      <th>State</th>
+      <th>State</th>
+      <th>State</th>
+      <th>State</th>
+      <th>State</th>
+      <th>State</th>
+      <th>State</th>
+      <th>State</th>
+      <th>State</th>
+      <th>State</th>
+      <th>State</th>
+      <th>State</th>
+      <th>State</th>
+    </tr>
+  </thead>
 
-{%endblock%}
+  <tbody class="table-group-divider">
+      {% for row in data %}
+      <tr>
+        <td>{{ row.event }}</td>
+        <td>{{ row.clock }}</td>
+        <td>{{ row.checkin_arrival_rnd }}</td>
+        <td>{{ row.checkin_arrival_time_between }}</td>
+        <td>{{ row.checkin_arrival_next }}</td>
+        <td>{{ row.security_arrival_rnd }}</td>
+        <td>{{ row.security_arrival_time_between }}</td>
+        <td>{{ row.security_arrival_next }}</td>
+        <td>{{ row.passport_arrival_rnd }}</td>
+        <td>{{ row.passport_arrival_time_between }}</td>
+        <td>{{ row.passport_arrival_next }}</td>
+        <td>{{ row.boarding_arrival_rnd }}</td>
+        <td>{{ row.boarding_arrival_time_between }}</td>
+        <td>{{ row.boarding_arrival_next }}</td>
+        <td>{{ row.end_checkin_rnd }}</td>
+        <td>{{ row.end_checkin_time }}</td>
+        <td>{{ row.end_checkin }}</td>
+        <td>{{ row.end_security_rnd }}</td>
+        <td>{{ row.end_security_time }}</td>
+        <td>{{ row.end_security }}</td>
+        <td>{{ row.end_passport_rnd }}</td>
+        <td>{{ row.end_passport_time }}</td>
+        <td>{{ row.end_passport }}</td>
+        <td>{{ row.end_boarding_rnd }}</td>
+        <td>{{ row.end_boarding_time }}</td>
+        <td>{{ row.end_boarding }}</td>
+        <td>{{ row.checkin_queue_1 }}</td>
+        <td>{{ row.checkin_queue_2 }}</td>
+        <td>{{ row.checkin_queue_3 }}</td>
+        <td>{{ row.checkin_state }}</td>
+        <td>{{ row.security_queue_1 }}</td>
+        <td>{{ row.security_queue_2 }}</td>
+        <td>{{ row.passport_state }}</td>
+        <td>{{ row.passport_queue_1 }}</td>
+        <td>{{ row.passport_queue_2 }}</td>
+        <td>{{ row.security_state }}</td>
+        <td>{{ row.boarding_queue_1 }}</td>
+        <td>{{ row.boarding_queue_2 }}</td>
+        <td>{{ row.boarding_queue_3 }}</td>
+        <td>{{ row.boarding_state }}</td>
+        <td>{{ row.ac_waiting_time_checkin }}</td>
+        <td>{{ row.passengers_waited_checkin }}</td>
+        <td>{{ row.ac_waiting_time_security }}</td>
+        <td>{{ row.passengers_waited_security }}</td>
+        <td>{{ row.ac_waiting_time_passport }}</td>
+        <td>{{ row.passengers_waited_passport }}</td>
+        <td>{{ row.ac_waiting_time_boarding }}</td>
+        <td>{{ row.passengers_waited_boarding }}</td>
+        <td>{{ row.passenger_1_state }}</td>
+        <td>{{ row.passenger_2_state }}</td>
+        <td>{{ row.passenger_3_state }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+
+  {%endblock%}
+</table>
