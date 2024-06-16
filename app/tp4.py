@@ -7,89 +7,85 @@ app = Flask(__name__)
 # Define the blueprint
 tp4 = Blueprint('tp4', __name__, template_folder='templates')
 
+def exponential_random(mean):
+    return -mean * math.log(1 - random.random())
+
 def generate_random_data():
-    # Generate random numbers
-    rnd_checkin = random.random()
-    rnd_security = random.random()
-    rnd_passport = random.random()
-    rnd_boarding = random.random()
-    
-    # Calculate time between arrivals using the exponential distribution formula
-    lambda_checkin = 60/50
-    lambda_security = 60/45
-    lambda_passport = 60/25
-    lambda_boarding = 60/60
+    means = {
+        "checkin": 1.2,
+        "security": 1.5,
+        "passport": 2.4,
+        "boarding": 1.0,
+        "checkin_service": 60/15,
+        "security_service": 60/20,
+        "passport_service": 60/12,
+        "boarding_service": 60/25,
+    }
 
-    tba_checkin = -lambda_checkin * math.log(1 - rnd_checkin)
-    tba_security = -lambda_security * math.log(1 - rnd_security)
-    tba_passport = -lambda_passport * math.log(1 - rnd_passport)
-    tba_boarding = -lambda_boarding * math.log(1 - rnd_boarding)
-
-    # Initialize data for the table
-    initial_data = [
-        {
+    def create_initial_row():
+        return {
             "event": "Initialization",
             "clock": 0,
-            "checkin_arrival_rnd": f"{rnd_checkin:.4f}",
-            "checkin_arrival_time_between": f"{tba_checkin:.2f}",
-            "checkin_arrival_next": f"{tba_checkin:.2f}",
-            "security_arrival_rnd": f"{rnd_security:.4f}",
-            "security_arrival_time_between": f"{tba_security:.2f}",
-            "security_arrival_next": f"{tba_security:.2f}",
-            "passport_arrival_rnd": f"{rnd_passport:.4f}",
-            "passport_arrival_time_between": f"{tba_passport:.2f}",
-            "passport_arrival_next": f"{tba_passport:.2f}",
-            "boarding_arrival_rnd": f"{rnd_boarding:.4f}",
-            "boarding_arrival_time_between": f"{tba_boarding:.2f}",
-            "boarding_arrival_next": f"{tba_boarding:.2f}",
-            "end_checkin_rnd": "",
-            "end_checkin_time": "",
-            "end_checkin": "",
-            "end_security_rnd": "",
-            "end_security_time": "",
-            "end_security": "",
-            "end_passport_rnd": "",
-            "end_passport_time": "",
-            "end_passport": "",
-            "end_boarding_rnd": "",
-            "end_boarding_time": "",
-            "end_boarding": "",
-            "checkin_state": "Free",
-            "checkin_queue_1": 0,
-            "checkin_queue_2": 0,
-            "checkin_queue_3": 0,
-            "security_state": "Free",
-            "security_queue_1": 0,
-            "security_queue_2": 0,
-            "passport_state": "Free",
-            "passport_queue_1": 0,
-            "passport_queue_2": 0,
-            "boarding_state": "Free",
-            "boarding_queue_1": 0,
-            "boarding_queue_2": 0,
-            "boarding_queue_3": 0,
-            "ac_waiting_time_checkin": 0,
-            "passengers_waited_checkin": 0,
-            "ac_waiting_time_security": 0,
-            "passengers_waited_security": 0,
-            "ac_waiting_time_passport": 0,
-            "passengers_waited_passport": 0,
-            "ac_waiting_time_boarding": 0,
-            "passengers_waited_boarding": 0,
+            **{f"{process}_arrival_rnd": f"{random.random():.4f}" for process in means if "_service" not in process},
+            **{f"{process}_arrival_time_between": f"{exponential_random(means[process]):.2f}" for process in means if "_service" not in process},
+            **{f"{process}_arrival_next": f"{exponential_random(means[process]):.2f}" for process in means if "_service" not in process},
+            **{f"end_{process}_rnd": "" for process in means if "_service" not in process},
+            **{f"end_{process}_time": "" for process in means if "_service" not in process},
+            **{f"end_{process}": "" for process in means if "_service" not in process},
+            **{f"{process}_state": "Free" for process in means if "_service" not in process},
+            **{f"{process}_queue_{i}": 0 for process in means if "_service" not in process for i in range(1, 4)},
+            **{f"ac_waiting_time_{process}": 0 for process in means if "_service" not in process},
+            **{f"passengers_waited_{process}": 0 for process in means if "_service" not in process},
             "passenger_1_state": "",
             "passenger_2_state": "",
             "passenger_3_state": "",
         }
-    ]
-    return initial_data
+
+    rows = [create_initial_row()]
+    event_counts = {process: 0 for process in means if "_service" not in process}
+
+    for i in range(1, 10):
+        prev_row = rows[-1]
+        next_event, clock = min(
+            {f"{event}_arrival": float(prev_row[f"{event}_arrival_next"]) for event in means if "_service" not in event}.items(), 
+            key=lambda x: x[1]
+        )
+
+        event_counts[next_event.split('_')[0]] += 1
+        event_name = next_event.split('_')[0]
+
+        new_row = {**prev_row}
+        # Reset arrival columns
+        for process in means:
+            if "_service" not in process:
+                new_row[f"{process}_arrival_rnd"] = ""
+                new_row[f"{process}_arrival_time_between"] = ""
+
+        new_row.update({
+            "event": f"{event_name.capitalize()} arrival {event_name.capitalize()[:3]}_{event_counts[event_name]}",
+            "clock": clock,
+            f"{event_name}_arrival_rnd": f"{random.random():.4f}",
+            f"{event_name}_arrival_time_between": f"{exponential_random(means[event_name]):.2f}",
+            f"{event_name}_arrival_next": f"{clock + exponential_random(means[event_name]):.2f}",
+        })
+
+        if f"end_{event_name}" in new_row:
+            rnd_end = random.random()
+            end_time = exponential_random(means[f"{event_name}_service"])
+            new_row.update({
+                f"end_{event_name}_rnd": f"{rnd_end:.4f}",
+                f"end_{event_name}_time": f"{end_time:.2f}",
+                f"end_{event_name}": f"{clock + end_time:.2f}",
+            })
+
+        rows.append(new_row)
+
+    return rows
 
 @tp4.route("/tp4")
 def tp4_render():
     data = generate_random_data()
     return render_template("tp4.html", data=data)
-
-# Register the blueprint
-app.register_blueprint(tp4)
 
 if __name__ == "__main__":
     app.run(debug=True)
