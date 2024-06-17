@@ -4,13 +4,12 @@ import math
 
 app = Flask(__name__)
 
-# Define the blueprint
 tp4 = Blueprint('tp4', __name__, template_folder='templates')
 
-def exponential_random(mean):
-    return -mean * math.log(1 - random.random())
+def exponential_random(mean, rnd):
+    return -mean * math.log(1 - rnd)
 
-def generate_random_data():
+def simulate():
     means = {
         "checkin": 1.2,
         "security": 1.5,
@@ -27,13 +26,13 @@ def generate_random_data():
             "event": "Initialization",
             "clock": 0,
             **{f"{process}_arrival_rnd": f"{random.random():.4f}" for process in means if "_service" not in process},
-            **{f"{process}_arrival_time_between": f"{exponential_random(means[process]):.2f}" for process in means if "_service" not in process},
-            **{f"{process}_arrival_next": f"{exponential_random(means[process]):.2f}" for process in means if "_service" not in process},
+            **{f"{process}_arrival_time_between": "" for process in means if "_service" not in process},
+            **{f"{process}_arrival_next": "" for process in means if "_service" not in process},
             **{f"end_{process}_rnd": "" for process in means if "_service" not in process},
             **{f"end_{process}_time": "" for process in means if "_service" not in process},
             **{f"end_{process}": "" for process in means if "_service" not in process},
-            **{f"{process}_state": "Free" for process in means if "_service" not in process},
-            **{f"{process}_queue_{i}": 0 for process in means if "_service" not in process for i in range(1, 4)},
+            **{f"{process}_queue": 0 for process in means if "_service" not in process},
+            **{f"{process}_state_{i}": "Free" for process in means if "_service" not in process for i in range(1, 4)},
             **{f"ac_waiting_time_{process}": 0 for process in means if "_service" not in process},
             **{f"passengers_waited_{process}": 0 for process in means if "_service" not in process},
             "passenger_1_state": "",
@@ -43,6 +42,13 @@ def generate_random_data():
 
     rows = [create_initial_row()]
     event_counts = {process: 0 for process in means if "_service" not in process}
+
+    # Initialize arrival times
+    for process in means:
+        if "_service" not in process:
+            rnd = float(rows[0][f"{process}_arrival_rnd"])
+            rows[0][f"{process}_arrival_time_between"] = f"{exponential_random(means[process], rnd):.2f}"
+            rows[0][f"{process}_arrival_next"] = f"{exponential_random(means[process], rnd):.2f}"
 
     for i in range(1, 10):
         prev_row = rows[-1]
@@ -65,13 +71,17 @@ def generate_random_data():
             "event": f"{event_name.capitalize()} arrival {event_name.capitalize()[:3]}_{event_counts[event_name]}",
             "clock": clock,
             f"{event_name}_arrival_rnd": f"{random.random():.4f}",
-            f"{event_name}_arrival_time_between": f"{exponential_random(means[event_name]):.2f}",
-            f"{event_name}_arrival_next": f"{clock + exponential_random(means[event_name]):.2f}",
+        })
+
+        rnd_arrival = float(new_row[f"{event_name}_arrival_rnd"])
+        new_row.update({
+            f"{event_name}_arrival_time_between": f"{exponential_random(means[event_name], rnd_arrival):.2f}",
+            f"{event_name}_arrival_next": f"{clock + exponential_random(means[event_name], rnd_arrival):.2f}",
         })
 
         if f"end_{event_name}" in new_row:
             rnd_end = random.random()
-            end_time = exponential_random(means[f"{event_name}_service"])
+            end_time = exponential_random(means[f"{event_name}_service"], rnd_end)
             new_row.update({
                 f"end_{event_name}_rnd": f"{rnd_end:.4f}",
                 f"end_{event_name}_time": f"{end_time:.2f}",
@@ -84,8 +94,9 @@ def generate_random_data():
 
 @tp4.route("/tp4")
 def tp4_render():
-    data = generate_random_data()
+    data = simulate()
     return render_template("tp4.html", data=data)
 
 if __name__ == "__main__":
+    app.register_blueprint(tp4)
     app.run(debug=True)
