@@ -66,10 +66,9 @@
       <th>2</th>
       <th>3</th>
       <th rowspan="2">Queue</th>
-      <th>Passenger 1</th>
-      <th>Passenger 2</th>
-      <th>Passenger 3</th>
-      <!-- Add more passenger columns as needed -->
+      <th>1</th>
+      <th>2</th>
+      <th>3</th>      
     </tr>
     <tr>
       <th>State</th>
@@ -139,9 +138,9 @@
         <td>{{ row.passengers_waited_passport }}</td>
         <td>{{ row.ac_waiting_time_boarding }}</td>
         <td>{{ row.passengers_waited_boarding }}</td>
-        <td>{{ row.passenger_1_queue }}</td>
-        <td>{{ row.passenger_2_queue }}</td>
-        <td>{{ row.passenger_3_queue }}</td>
+        <td>{{ row.passenger_1_state }}</td>
+        <td>{{ row.passenger_2_state }}</td>
+        <td>{{ row.passenger_3_state }}</td>
       </tr>
       {% endfor %}
     </tbody>
