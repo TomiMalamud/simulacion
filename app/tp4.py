@@ -46,7 +46,7 @@ def create_initial_row(means):
     
     return initial_row
 
-def update_service_state(new_row, event_name, means, clock, passenger_states):
+def update_service_state(new_row, event_name, means, clock, passenger_states, event_id_map):
     for i in range(1, 4):
         if new_row[f"{event_name}_state_{i}"] == "Free":
             new_row[f"{event_name}_state_{i}"] = "Busy"
@@ -55,7 +55,9 @@ def update_service_state(new_row, event_name, means, clock, passenger_states):
             new_row[f"end_{event_name}_rnd"] = f"{rnd_end:.4f}"
             new_row[f"end_{event_name}_time"] = f"{end_time:.2f}"
             new_row[f"end_{event_name}"] = f"{clock + end_time:.2f}"
-            passenger_states.append(f"in_{event_name}")
+            event_id = event_id_map[event_name]
+            event_id_map[f"end_{event_name}_{event_id}"] = f"{event_name.capitalize()[:3]}_{event_id}"
+            passenger_states.append(f"in_{event_name} {event_name.capitalize()[:3]}_{event_id}")
             return
     new_row[f"{event_name}_queue"] += 1
     passenger_states.append(f"waiting_{event_name}")
@@ -63,7 +65,8 @@ def update_service_state(new_row, event_name, means, clock, passenger_states):
 def simulate():
     means = initialize_means()
     rows = [create_initial_row(means)]
-    event_counts = {process: 0 for process in means if "_service" not in process}
+    arrival_counts = {process: 0 for process in means if "_service" not in process}
+    end_counts = {process: 0 for process in means if "_service" not in process}
 
     # Initialize arrival times
     for process in means:
@@ -88,7 +91,6 @@ def simulate():
             event_name = next_event.split('_')[1]
         else:
             event_name = next_event.split('_')[0]
-        event_counts[event_name] += 1
 
         new_row = prev_row.copy()
 
@@ -99,7 +101,8 @@ def simulate():
 
         passenger_states = []
         if "arrival" in next_event:
-            new_row["event"] = f"{event_name.capitalize()} arrival {event_name.capitalize()[:3]}_{event_counts[event_name]}"
+            arrival_counts[event_name] += 1
+            new_row["event"] = f"{event_name.capitalize()} arrival {event_name.capitalize()[:3]}_{arrival_counts[event_name]}"
             new_row["clock"] = clock
             new_row[f"{event_name}_arrival_rnd"] = f"{random.random():.4f}"
 
@@ -108,10 +111,11 @@ def simulate():
             new_row[f"{event_name}_arrival_time_between"] = f"{arrival_time_between:.2f}"
             new_row[f"{event_name}_arrival_next"] = f"{clock + arrival_time_between:.2f}"
 
-            update_service_state(new_row, event_name, means, clock, passenger_states)
+            update_service_state(new_row, event_name, means, clock, passenger_states, end_counts)
 
         elif "end" in next_event:
-            new_row["event"] = f"End {event_name.capitalize()} {event_name.capitalize()[:3]}_{event_counts[event_name]}"
+            end_counts[event_name] += 1
+            new_row["event"] = f"End {event_name.capitalize()} {event_name.capitalize()[:3]}_{end_counts[event_name]}"
             new_row["clock"] = clock
             new_row[f"end_{event_name}_rnd"] = ""
             new_row[f"end_{event_name}_time"] = ""
@@ -122,7 +126,7 @@ def simulate():
                     new_row[f"{event_name}_state_{i}"] = "Free"
                     if new_row[f"{event_name}_queue"] > 0:
                         new_row[f"{event_name}_queue"] -= 1
-                        update_service_state(new_row, event_name, means, clock, passenger_states)
+                        update_service_state(new_row, event_name, means, clock, passenger_states, end_counts)
                     break
 
         for j in range(len(passenger_states)):
