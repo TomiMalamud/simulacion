@@ -25,7 +25,7 @@
       <th rowspan="3">Passengers Waited Passport</th>
       <th rowspan="3">AC Waiting Time Boarding</th>
       <th rowspan="3">Passengers Waited Boarding</th>
-      <th colspan="9">Passenger</th>
+      <th colspan="{{ passenger_count }}">Passenger</th>
     </tr>
     <tr>
       <th rowspan="2">Rnd</th>
@@ -66,9 +66,9 @@
       <th>2</th>
       <th>3</th>
       <th rowspan="2">Queue</th>
-      <th>1</th>
-      <th>2</th>
-      <th>3</th>      
+      {% for i in range(1, passenger_count + 1) %}
+      <th>{{ i }}</th>
+      {% endfor %}
     </tr>
     <tr>
       <th>State</th>
@@ -81,9 +81,9 @@
       <th>State</th>
       <th>State</th>
       <th>State</th>
+      {% for _ in range(1, passenger_count + 1) %}
       <th>State</th>
-      <th>State</th>
-      <th>State</th>
+      {% endfor %}
     </tr>
   </thead>
 
@@ -137,10 +137,10 @@
         <td>{{ row.ac_waiting_time_passport }}</td>
         <td>{{ row.passengers_waited_passport }}</td>
         <td>{{ row.ac_waiting_time_boarding }}</td>
-        <td>{{ row.passengers_waited_boarding }}</td>
-        <td>{{ row.passenger_1_state }}</td>
-        <td>{{ row.passenger_2_state }}</td>
-        <td>{{ row.passenger_3_state }}</td>
+        <td>{{ row.passengers_waited_boarding }}</td>      
+        {% for i in range(1, passenger_count + 1) %}
+        <td>{{ row['passenger_' ~ i ~ '_state'] }}</td>
+        {% endfor %}
       </tr>
       {% endfor %}
     </tbody>
