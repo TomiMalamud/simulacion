@@ -1,6 +1,24 @@
-{%extends 'base.html'%} {%block content%}
+{% extends 'base.html' %}
+{% block content %}
 
-<table class="table table-bordered">
+<form method="GET" action="/tp4">
+  <div class="form-group">
+    <label for="start_line">Start Line:</label>
+    <input type="number" id="start_line" name="start_line" class="form-control" required>
+  </div>
+  <div class="form-group">
+    <label for="end_line">End Line:</label>
+    <input type="number" id="end_line" name="end_line" class="form-control" required>
+  </div>
+  <div class="form-group">
+    <label for="total_rows">Total Rows to Simulate:</label>
+    <input type="number" id="total_rows" name="total_rows" class="form-control" required>
+  </div>
+  <button type="submit" class="btn btn-primary">Simulate</button>
+</form>
+
+{% if data %}
+<table class="table table-bordered mt-4">
   <thead class="text-center">
     <tr>
       <th rowspan="3">Event</th>
@@ -18,13 +36,21 @@
       <th colspan="3">Passport</th>
       <th colspan="4">Boarding</th>
       <th rowspan="3">AC Waiting Time Check-in</th>
-      <th rowspan="3">Passengers Waited Check-in</th>
+      <th rowspan="3">Tiempo promedio espera checkin</th>
+      <th rowspan="3">Tiempo ocupación checkin</th>
+      <th rowspan="3">Porcentaje Ocupación checkin</th>
       <th rowspan="3">AC Waiting Time Security</th>
-      <th rowspan="3">Passengers Waited Security</th>
+      <th rowspan="3">Tiempo promedio espera seguridad</th>
+      <th rowspan="3">Tiempo ocupación seguridad</th>
+      <th rowspan="3">Porcentaje Ocupación seguridad</th>
       <th rowspan="3">AC Waiting Time Passport</th>
-      <th rowspan="3">Passengers Waited Passport</th>
+      <th rowspan="3">Tiempo promedio espera pasaporte</th>
+      <th rowspan="3">Tiempo ocupación pasaporte</th>
+      <th rowspan="3">Porcentaje Ocupación pasaporte</th>
       <th rowspan="3">AC Waiting Time Boarding</th>
-      <th rowspan="3">Passengers Waited Boarding</th>
+      <th rowspan="3">Tiempo promedio espera embarque</th>
+      <th rowspan="3">Tiempo ocupación embarque</th>
+      <th rowspan="3">Porcentaje Ocupación embarque</th>
       <th colspan="{{ passenger_count }}">Passenger</th>
     </tr>
     <tr>
@@ -134,28 +160,37 @@
         <td>{{ row.checkin_queue }}</td>
         <td>{{ row.security_state_1 }}</td>
         <td>{{ row.security_state_2 }}</td>
-        <td>{{ row.passport_queue }}</td>
+        <td>{{ row.security_queue }}</td>
         <td>{{ row.passport_state_1 }}</td>
         <td>{{ row.passport_state_2 }}</td>
-        <td>{{ row.security_queue }}</td>
+        <td>{{ row.passport_queue }}</td>
         <td>{{ row.boarding_state_1 }}</td>
         <td>{{ row.boarding_state_2 }}</td>
         <td>{{ row.boarding_state_3 }}</td>
         <td>{{ row.boarding_queue }}</td>
         <td>{{ row.ac_waiting_time_checkin }}</td>
-        <td>{{ row.passengers_waited_checkin }}</td>
+        <td>{{ row.promedy_time_checkin }}</td>
+        <td>{{ row.ocupation_time_checkin }}</td>
+        <td>{{ row.porcent_time_checkin }}</td>
         <td>{{ row.ac_waiting_time_security }}</td>
-        <td>{{ row.passengers_waited_security }}</td>
+        <td>{{ row.promedy_time_security }}</td>
+        <td>{{ row.ocupation_time_security }}</td>
+        <td>{{ row.porcent_time_security }}</td>
         <td>{{ row.ac_waiting_time_passport }}</td>
-        <td>{{ row.passengers_waited_passport }}</td>
+        <td>{{ row.promedy_time_passport }}</td>
+        <td>{{ row.ocupation_time_passport }}</td>
+        <td>{{ row.porcent_time_passport }}</td>
         <td>{{ row.ac_waiting_time_boarding }}</td>
-        <td>{{ row.passengers_waited_boarding }}</td>      
+        <td>{{ row.promedy_time_boarding }}</td>
+        <td>{{ row.ocupation_time_boarding }}</td>
+        <td>{{ row.porcent_time_boarding }}</td>
         {% for i in range(1, passenger_count + 1) %}
         <td>{{ row['passenger_' ~ i ~ '_state'] }}</td>
         {% endfor %}
       </tr>
-      {% endfor %}
-    </tbody>
-
-  {%endblock%}
+    {% endfor %}
+  </tbody>
 </table>
+{% endif %}
+
+{% endblock %}
