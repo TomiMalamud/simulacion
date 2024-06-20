@@ -7,6 +7,9 @@ app = Flask(__name__)
 tp4 = Blueprint('tp4', __name__, template_folder='templates')
 
 def exponential_random(mean, rnd):
+    # Ensure rnd is less than 1 to avoid math domain error
+    while rnd == 1.0:
+        rnd = random.random()
     return -mean * math.log(1 - rnd)
 
 def initialize_means():
@@ -45,10 +48,8 @@ def create_initial_row(means):
 
 def update_service_state(new_row, event_name, means, clock, passenger_states, event_id_map, passenger_id_map):
     server_count = 3 if event_name in ["checkin", "boarding"] else 2
-    all_busy = True
     for server_id in range(1, server_count + 1):
         if new_row[f"{event_name}_state_{server_id}"] == "Free":
-            all_busy = False
             new_row[f"{event_name}_state_{server_id}"] = "Busy"
             rnd_end = random.random()
             end_time = exponential_random(means[f"{event_name}_service"], rnd_end)
@@ -60,9 +61,13 @@ def update_service_state(new_row, event_name, means, clock, passenger_states, ev
             passenger_id = passenger_id_map["current_passenger_id"]
             passenger_states[passenger_id] = f"in_{event_name} {event_name.capitalize()[:3]}_{event_id}_{server_id}"
             new_row[f"passenger_{passenger_id}_state"] = passenger_states[passenger_id]
-            break
-    if all_busy:
-        new_row[f"{event_name}_queue"] += 1
+            return True
+    return False
+
+def handle_queue(new_row, event_name, means, clock, passenger_states, event_id_map, passenger_id_map):
+    if new_row[f"{event_name}_queue"] > 0:
+        new_row[f"{event_name}_queue"] -= 1
+        update_service_state(new_row, event_name, means, clock, passenger_states, event_id_map, passenger_id_map)
 
 def simulate():
     means = initialize_means()
@@ -80,7 +85,7 @@ def simulate():
             rows[0][f"{process}_arrival_time_between"] = f"{arrival_time_between:.2f}"
             rows[0][f"{process}_arrival_next"] = f"{arrival_time_between:.2f}"
 
-    for i in range(1, 10):
+    for i in range(1, 100):
         prev_row = rows[-1]
         events_times = {}
 
@@ -94,6 +99,12 @@ def simulate():
         next_event, clock = min(events_times.items(), key=lambda x: x[1])
 
         new_row = prev_row.copy()
+
+        # Clear previous event random and time fields
+        for process in means:
+            if "_service" not in process:
+                new_row[f"{process}_arrival_rnd"] = ""
+                new_row[f"{process}_arrival_time_between"] = ""
 
         if "end" in next_event:
             parts = next_event.split('_')
@@ -109,6 +120,16 @@ def simulate():
             if passenger_key:
                 new_row[f"passenger_{passenger_key}_state"] = "-"
                 passenger_states[passenger_key] = "-"
+
+            new_row["event"] = f"End {event_name.capitalize()} ({server_id}) {event_id}"
+            new_row["clock"] = clock
+            new_row[f"end_{event_name}_rnd"] = ""
+            new_row[f"end_{event_name}_time"] = ""
+            new_row[f"end_{event_name}_{server_id}"] = float('inf')
+
+            new_row[f"{event_name}_state_{server_id}"] = "Free"
+            handle_queue(new_row, event_name, means, clock, passenger_states, event_id_map, passenger_id_map)
+
         else:
             event_name = next_event.split('_')[0]
             arrival_counts[event_name] += 1
@@ -117,12 +138,6 @@ def simulate():
             passenger_id_map["current_passenger_id"] += 1
             new_passenger_id = passenger_id_map["current_passenger_id"]
 
-        for process in means:
-            if "_service" not in process:
-                new_row[f"{process}_arrival_rnd"] = ""
-                new_row[f"{process}_arrival_time_between"] = ""
-
-        if "arrival" in next_event:
             new_row["event"] = f"{event_name.capitalize()} arrival {event_id}"
             new_row["clock"] = clock
             new_row[f"{event_name}_arrival_rnd"] = f"{random.random():.4f}"
@@ -132,22 +147,8 @@ def simulate():
             new_row[f"{event_name}_arrival_time_between"] = f"{arrival_time_between:.2f}"
             new_row[f"{event_name}_arrival_next"] = f"{clock + arrival_time_between:.2f}"
 
-            update_service_state(new_row, event_name, means, clock, passenger_states, event_id_map, passenger_id_map)
-
-        elif "end" in next_event:
-            new_row["event"] = f"End {event_name.capitalize()} ({server_id}) {event_id}"
-            new_row["clock"] = clock
-            new_row[f"end_{event_name}_rnd"] = ""
-            new_row[f"end_{event_name}_time"] = ""
-            new_row[f"end_{event_name}_{server_id}"] = float('inf')
-
-            for i in range(1, 4 if event_name in ["checkin", "boarding"] else 3):
-                if new_row[f"{event_name}_state_{i}"] == "Busy":
-                    new_row[f"{event_name}_state_{i}"] = "Free"
-                    if new_row[f"{event_name}_queue"] > 0:
-                        new_row[f"{event_name}_queue"] -= 1
-                        update_service_state(new_row, event_name, means, clock, passenger_states, event_id_map, passenger_id_map)
-                    break
+            if not update_service_state(new_row, event_name, means, clock, passenger_states, event_id_map, passenger_id_map):
+                new_row[f"{event_name}_queue"] += 1
 
         # Ensure passenger states are updated in the new row
         for key in passenger_states:
@@ -164,9 +165,21 @@ def simulate():
     return rows, passenger_count
 
 
+
 @tp4.route("/tp4")
 def tp4_render():
     data, passenger_count = simulate()
+    # Slice the data to only include the first 300 rows
+    data = data[:300]
+    
+    # Count the unique passengers in the first 300 rows
+    passenger_ids = set()
+    for row in data:
+        for key in row:
+            if key.startswith("passenger_") and "_state" in key and row[key] != "-":
+                passenger_ids.add(key.split('_')[1])
+    passenger_count = len(passenger_ids)
+    
     return render_template("tp4.html", data=data, passenger_count=passenger_count)
 
 if __name__ == "__main__":
