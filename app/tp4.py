@@ -11,16 +11,16 @@ def exponential_random(mean, rnd):
         rnd = random.random()
     return -mean * math.log(1 - rnd)
 
-def initialize_means():
+def initialize_means(checkin_arrivals, ends_checkin, security_arrivals, ends_security, passport_arrivals, ends_passport, boarding_arrivals, ends_boarding):
     return {
-        "checkin": 1.2,
-        "security": 1.5,
-        "passport": 2.4,
-        "boarding": 1.0,
-        "checkin_service": 60 / 15,
-        "security_service": 60 / 20,
-        "passport_service": 60 / 12,
-        "boarding_service": 60 / 25,
+        "checkin": 60 / checkin_arrivals,
+        "security": 60 / security_arrivals,
+        "passport": 60 / passport_arrivals,
+        "boarding": 60 / boarding_arrivals,
+        "checkin_service": 60 / ends_checkin,
+        "security_service": 60 / ends_security,
+        "passport_service": 60 / ends_passport,
+        "boarding_service": 60 / ends_boarding,
     }
 
 def create_initial_row(means):
@@ -68,8 +68,8 @@ def handle_queue(new_row, event_name, means, clock, passenger_states, event_id_m
         new_row[f"{event_name}_queue"] -= 1
         update_service_state(new_row, event_name, means, clock, passenger_states, event_id_map, passenger_id_map)
 
-def simulate(start_line, end_line, total_rows):
-    means = initialize_means()
+def simulate(start_line, end_line, total_rows, checkin_arrivals, ends_checkin, security_arrivals, ends_security, passport_arrivals, ends_passport, boarding_arrivals, ends_boarding):
+    means = initialize_means(checkin_arrivals, ends_checkin, security_arrivals, ends_security, passport_arrivals, ends_passport, boarding_arrivals, ends_boarding)
     all_rows = [create_initial_row(means)]
     rows_to_show = []
     arrival_counts = {process: 0 for process in means if "_service" not in process}
@@ -244,10 +244,19 @@ def simulate(start_line, end_line, total_rows):
 @tp4.route('/tp4', methods=['GET'])
 def tp4_render():
     start_line = int(request.args.get("start_line", default=0, type=int))
-    end_line = int(request.args.get("end_line",default=100, type=int))
-    total_rows = int(request.args.get("total_rows",default=100, type=int))
-    data, passenger_count = simulate(start_line, end_line, total_rows)
-    return render_template("tp4.html", data=data, passenger_count=passenger_count)
+    end_line = int(request.args.get("end_line", default=100, type=int))
+    total_rows = int(request.args.get("total_rows", default=100, type=int))
+    checkin_arrivals = int(request.args.get("checkin_arrivals", default=50, type=int))
+    ends_checkin = int(request.args.get("ends_checkin", default=15, type=int))
+    security_arrivals = int(request.args.get("security_arrivals", default=40, type=int))
+    ends_security = int(request.args.get("ends_security", default=20, type=int))
+    passport_arrivals = int(request.args.get("passport_arrivals", default=25, type=int))
+    ends_passport = int(request.args.get("ends_passport", default=12, type=int))
+    boarding_arrivals = int(request.args.get("boarding_arrivals", default=60, type=int))
+    ends_boarding = int(request.args.get("ends_boarding", default=25, type=int))
+    
+    data, passenger_count = simulate(start_line, end_line, total_rows, checkin_arrivals, ends_checkin, security_arrivals, ends_security, passport_arrivals, ends_passport, boarding_arrivals, ends_boarding)
+    return render_template("tp4.html", data=data, passenger_count=passenger_count, request=request)
 
 if __name__ == "__main__":
     app.register_blueprint(tp4)

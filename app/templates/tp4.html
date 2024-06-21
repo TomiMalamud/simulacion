@@ -2,197 +2,164 @@
 <div class="container p-5 w-80">
   <h1>TP4 - Simulación de un aeropuerto</h1>
   <form method="GET" action="/tp4">
-    <div
-      class="rounded border border-dark-subtle bg-secondary-subtle p-4 mt-5 container row"
-    >
-      <div class="col-md-6">
-        <div class="form-group mb-3">
-          <label for="start_line">Fila inicial</label>
-          <input
-            type="number"
-            id="start_line"
-            name="start_line"
-            class="form-control"
-            required
-            value="{{ request.args.get('start_line', '') }}"
-          />
+    <div class="rounded border border-dark-subtle bg-secondary-subtle p-4 mt-5 container row">
+        <div class="col-md-6">
+            <div class="form-group mb-3">
+                <label for="start_line">Fila inicial</label>
+                <input
+                    type="number"
+                    id="start_line"
+                    name="start_line"
+                    class="form-control mt-1"
+                    required
+                    value="{{ request.args.get('start_line', '0') }}"
+                />
+            </div>
+            <div class="form-group mb-3">
+                <label for="end_line">Filas adicionales a mostrar</label>
+                <input
+                    type="number"
+                    id="end_line"
+                    name="end_line"
+                    class="form-control mt-1"
+                    required
+                    value="{{ request.args.get('end_line', '100') }}"
+                />
+            </div>
+            <div class="form-group mb-3">
+                <label for="total_rows">Filas totales a simular</label>
+                <input
+                    type="number"
+                    id="total_rows"
+                    name="total_rows"
+                    class="form-control mt-1"
+                    required
+                    value="{{ request.args.get('total_rows', '100') }}"
+                />
+            </div>
         </div>
-        <div class="form-group mb-3">
-          <label for="end_line">Filas adicionales a mostrar</label>
-          <input
-            type="number"
-            id="end_line"
-            name="end_line"
-            class="form-control"
-            required
-            value="{{ request.args.get('end_line', '') }}"
-          />
+        <div class="col-md-6">
+            <div class="row">
+                <div class="form-group col-6 mb-3">
+                    <label for="checkin_arrivals">Tasa de llegada check-in</label>
+                    <div class="input-group mt-1">
+                        <input
+                            class="form-control"
+                            type="number"
+                            id="checkin_arrivals"
+                            name="checkin_arrivals"
+                            value="{{ request.args.get('checkin_arrivals', '50') }}"
+                        />
+                        <span class="input-group-text" style="font-size: 0.8em; color: lightgray">por hora</span>
+                    </div>
+                </div>
+                <div class="form-group col-6 mb-3">
+                    <label for="ends_checkin">Tasa de atención Check-in</label>
+                    <div class="input-group mt-1">
+                        <input
+                            class="form-control"
+                            type="number"
+                            id="ends_checkin"
+                            name="ends_checkin"
+                            value="{{ request.args.get('ends_checkin', '15') }}"
+                        />
+                        <span class="input-group-text" style="font-size: 0.8em; color: lightgray">por hora</span>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group col-6 mb-3">
+                    <label for="security_arrivals">Tasa de llegada seguridad</label>
+                    <div class="input-group mt-1">
+                        <input
+                            class="form-control"
+                            type="number"
+                            id="security_arrivals"
+                            name="security_arrivals"
+                            value="{{ request.args.get('security_arrivals', '40') }}"
+                        />
+                        <span class="input-group-text" style="font-size: 0.8em; color: lightgray">por hora</span>
+                    </div>
+                </div>
+                <div class="form-group col-6 mb-3">
+                    <label for="ends_security">Tasa de atención seguridad</label>
+                    <div class="input-group mt-1">
+                        <input
+                            class="form-control"
+                            type="number"
+                            id="ends_security"
+                            name="ends_security"
+                            value="{{ request.args.get('ends_security', '20') }}"
+                        />
+                        <span class="input-group-text" style="font-size: 0.8em; color: lightgray">por hora</span>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group col-6 mb-3">
+                    <label for="passport_arrivals">Tasa de llegada pasaportes</label>
+                    <div class="input-group mt-1">
+                        <input
+                            class="form-control"
+                            type="number"
+                            id="passport_arrivals"
+                            name="passport_arrivals"
+                            value="{{ request.args.get('passport_arrivals', '25') }}"
+                        />
+                        <span class="input-group-text" style="font-size: 0.8em; color: lightgray">por hora</span>
+                    </div>
+                </div>
+                <div class="form-group col-6 mb-3">
+                    <label for="ends_passport">Tasa de atención pasaportes</label>
+                    <div class="input-group mt-1">
+                        <input
+                            class="form-control"
+                            type="number"
+                            id="ends_passport"
+                            name="ends_passport"
+                            value="{{ request.args.get('ends_passport', '12') }}"
+                        />
+                        <span class="input-group-text" style="font-size: 0.8em; color: lightgray">por hora</span>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group col-6 mb-3">
+                    <label for="boarding_arrivals">Tasa de llegada embarque</label>
+                    <div class="input-group mt-1">
+                        <input
+                            class="form-control"
+                            type="number"
+                            id="boarding_arrivals"
+                            name="boarding_arrivals"
+                            value="{{ request.args.get('boarding_arrivals', '60') }}"
+                        />
+                        <span class="input-group-text" style="font-size: 0.8em; color: lightgray">por hora</span>
+                    </div>
+                </div>
+                <div class="form-group col-6 mb-3">
+                    <label for="ends_boarding">Tasa de atención embarque</label>
+                    <div class="input-group mt-1">
+                        <input
+                            class="form-control"
+                            type="number"
+                            id="ends_boarding"
+                            name="ends_boarding"
+                            value="{{ request.args.get('ends_boarding', '25') }}"
+                        />
+                        <span class="input-group-text" style="font-size: 0.8em; color: lightgray">por hora</span>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="form-group mb-3">
-          <label for="total_rows">Filas totales a simular</label>
-          <input
-            type="number"
-            id="total_rows"
-            name="total_rows"
-            class="form-control"
-            required
-            value="{{ request.args.get('total_rows', '') }}"
-          />
+        <div class="col-12 mt-4">
+            <button type="submit" class="btn w-100 btn-light">
+                Ejecutar Simulación
+            </button>
         </div>
-      </div>
-      <div class="col-md-6">
-        <div class="row">
-          <div class="form-group col-6 mb-3">
-            <label for="checkin_arrivals">Tasa de llegada check-in</label>
-            <div class="input-group mt-1">
-              <input
-                class="form-control"
-                type="number"
-                id="checkin_arrivals"
-                name="checkin_arrivals"
-                value="50"
-              />
-              <span
-                class="input-group-text"
-                style="font-size: 0.8em; color: lightgray"
-                >por hora</span
-              >
-            </div>
-          </div>
-          <div class="form-group col-6 mb-3">
-            <label for="ends_checkin">Tasa de atención Check-in</label>
-            <div class="input-group mt-1">
-              <input
-                class="form-control"
-                type="number"
-                id="ends_checkin"
-                name="ends_checkin"
-                value="15"
-              />
-              <span
-                class="input-group-text"
-                style="font-size: 0.8em; color: lightgray"
-                >por hora</span
-              >
-            </div>
-          </div>
-        </div>
-        <div class="row">
-          <div class="form-group col-6 mb-3">
-            <label for="security_arrivals">Tasa de llegada seguridad</label>
-            <div class="input-group mt-1">
-              <input
-                class="form-control"
-                type="number"
-                id="security_arrivals"
-                name="security_arrivals"
-                value="40"
-              />
-              <span
-                class="input-group-text"
-                style="font-size: 0.8em; color: lightgray"
-                >por hora</span
-              >
-            </div>
-          </div>
-          <div class="form-group col-6 mb-3">
-            <label for="ends_security">Tasa de atención seguridad</label>
-            <div class="input-group mt-1">
-              <input
-                class="form-control"
-                type="number"
-                id="ends_security"
-                name="ends_security"
-                value="20"
-              />
-              <span
-                class="input-group-text"
-                style="font-size: 0.8em; color: lightgray"
-                >por hora</span
-              >
-            </div>
-          </div>
-        </div>
-        <div class="row">
-          <div class="form-group col-6 mb-3">
-            <label for="passport_arrivals">Tasa de llegada pasaportes</label>
-            <div class="input-group mt-1">
-              <input
-                class="form-control"
-                type="number"
-                id="passport_arrivals"
-                name="passport_arrivals"
-                value="25"
-              />
-              <span
-                class="input-group-text"
-                style="font-size: 0.8em; color: lightgray"
-                >por hora</span
-              >
-            </div>
-          </div>
-          <div class="form-group col-6 mb-3">
-            <label for="ends_passport">Tasa de atención pasaportes</label>
-            <div class="input-group mt-1">
-              <input
-                class="form-control"
-                type="number"
-                id="ends_passport"
-                name="ends_passport"
-                value="12"
-              />
-              <span
-                class="input-group-text"
-                style="font-size: 0.8em; color: lightgray"
-                >por hora</span
-              >
-            </div>
-          </div>
-        </div>
-        <div class="row">
-          <div class="form-group col-6 mb-3">
-            <label for="checkin_arrivals">Tasa de llegada embarque</label>
-            <div class="input-group mt-1">
-              <input
-                class="form-control"
-                type="number"
-                id="checkin_arrivals"
-                name="checkin_arrivals"
-                value="60"
-              />
-              <span
-                class="input-group-text"
-                style="font-size: 0.8em; color: lightgray"
-                >por hora</span
-              >
-            </div>
-          </div>
-          <div class="form-group col-6 mb-3">
-            <label for="ends_boarding">Tasa de atención embarque</label>
-            <div class="input-group mt-1">
-              <input
-                class="form-control"
-                type="number"
-                id="ends_boarding"
-                name="ends_boarding"
-                value="25"
-              />
-              <span
-                class="input-group-text"
-                style="font-size: 0.8em; color: lightgray"
-                >por hora</span
-              >
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-12 mt-4">
-        <button type="submit" class="btn w-100 btn-light">
-          Ejecutar Simulación
-        </button>
-      </div>
     </div>
-  </form>
+</form>
+
 
   {% if data %}
   <table class="table table-bordered position-absolute start-0 mt-4">
