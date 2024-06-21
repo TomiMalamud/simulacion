@@ -165,7 +165,7 @@
   <table class="table table-bordered position-absolute start-0 mt-4">
     <thead class="text-center">
       <tr>
-        <th rowspan="3">No.</th>
+        <th rowspan="3">#</th>
         <th rowspan="3">Event</th>
         <th rowspan="3">Clock (min)</th>
         <th colspan="3">Check-in Arrival</th>
@@ -196,7 +196,7 @@
         <th rowspan="3">Tiempo promedio espera embarque</th>
         <th rowspan="3">Tiempo ocupación embarque</th>
         <th rowspan="3">Porcentaje Ocupación embarque</th>
-        <th colspan="{{ passenger_count }}">Passenger</th>
+        <th colspan="{{ active_passengers | length * 2}}">Passenger</th>
       </tr>
       <tr>
         <th rowspan="2">Rnd</th>
@@ -243,8 +243,8 @@
         <th>2</th>
         <th>3</th>
         <th rowspan="2">Queue</th>
-        {% for i in range(1, passenger_count + 1) %}
-        <th>{{ i }}</th>
+        {% for key in active_passengers %}
+        <th colspan="2">{{ key }}</th>
         {% endfor %}
       </tr>
       <tr>
@@ -258,8 +258,9 @@
         <th>State</th>
         <th>State</th>
         <th>State</th>
-        {% for _ in range(1, passenger_count + 1) %}
+        {% for key in active_passengers %}
         <th>State</th>
+        <th>Waiting start</td>
         {% endfor %}
       </tr>
     </thead>
@@ -330,8 +331,9 @@
       <td>{{ row.average_time_boarding }}</td>
       <td>{{ row.ocupation_time_boarding }}</td>
       <td>{{ row.percent_time_boarding }}</td>
-      {% for i in range(1, passenger_count + 1) %}
-      <td>{{ row['passenger_' ~ i ~ '_state'] }}</td>
+      {% for key in active_passengers %}
+      <td>{{ row['passenger_' ~ key ~ '_state'] }}</td>
+    <td>{{ row['passenger_' ~ key ~ '_waiting_time'] }}</td>
       {% endfor %}
     </tr>
     {% endfor %}
