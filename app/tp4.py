@@ -7,7 +7,6 @@ app = Flask(__name__)
 tp4 = Blueprint('tp4', __name__, template_folder='templates')
 
 def exponential_random(mean, rnd):
-    # Ensure rnd is less than 1 to avoid math domain error
     while rnd == 1.0:
         rnd = random.random()
     return -mean * math.log(1 - rnd)
@@ -95,7 +94,6 @@ def simulate(start_line, end_line, total_rows):
     tiempo_ocupacion_embarque = 0 
     porcent_ocup_embarq = 0
 
-
     # Initialize arrival times
     for process in means:
         if "_service" not in process:
@@ -103,6 +101,8 @@ def simulate(start_line, end_line, total_rows):
             arrival_time_between = exponential_random(means[process], rnd)
             all_rows[0][f"{process}_arrival_time_between"] = f"{arrival_time_between:.2f}"
             all_rows[0][f"{process}_arrival_next"] = f"{arrival_time_between:.2f}"
+
+    rows_to_show.append(all_rows[0])
 
     row_count = 1
     while row_count <= total_rows:
@@ -120,7 +120,6 @@ def simulate(start_line, end_line, total_rows):
 
         new_row = prev_row.copy()
 
-        # Clear previous event random and time fields
         for process in means:
             if "_service" not in process:
                 new_row[f"{process}_arrival_rnd"] = ""
@@ -169,7 +168,6 @@ def simulate(start_line, end_line, total_rows):
 
             if not update_service_state(new_row, event_name, means, clock, passenger_states, event_id_map, passenger_id_map):
                 new_row[f"{event_name}_queue"] += 1
-
 
         # Para el estadístico del punto 1 (tiempo de espera promedio por servicio)...
         if new_row["checkin_queue"] > 0:
@@ -246,8 +244,8 @@ def simulate(start_line, end_line, total_rows):
 @tp4.route('/tp4', methods=['GET'])
 def tp4_render():
     start_line = int(request.args.get("start_line", default=0, type=int))
-    end_line = int(request.args.get("end_line",default=10, type=int))
-    total_rows = int(request.args.get("total_rows",default=10, type=int))
+    end_line = int(request.args.get("end_line",default=100, type=int))
+    total_rows = int(request.args.get("total_rows",default=100, type=int))
     data, passenger_count = simulate(start_line, end_line, total_rows)
     return render_template("tp4.html", data=data, passenger_count=passenger_count)
 
