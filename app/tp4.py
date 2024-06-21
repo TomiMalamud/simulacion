@@ -1,9 +1,8 @@
-from flask import Flask, Blueprint, render_template, request
 import random
 import math
+from flask import Flask, Blueprint, render_template, request
 
 app = Flask(__name__)
-
 tp4 = Blueprint('tp4', __name__, template_folder='templates')
 
 def exponential_random(mean, rnd):
@@ -45,7 +44,7 @@ def create_initial_row(means):
 
     return initial_row
 
-def update_service_state(new_row, event_name, means, clock, passenger_states, event_id_map, passenger_id_map):
+def update_service_state(new_row, event_name, means, clock, passenger_states, event_id_map, passenger_id):
     server_count = 3 if event_name in ["checkin", "boarding"] else 2
     for server_id in range(1, server_count + 1):
         if new_row[f"{event_name}_state_{server_id}"] == "Free":
@@ -54,11 +53,11 @@ def update_service_state(new_row, event_name, means, clock, passenger_states, ev
             end_time = exponential_random(means[f"{event_name}_service"], rnd_end)
             new_row[f"end_{event_name}_rnd"] = f"{rnd_end:.4f}"
             new_row[f"end_{event_name}_time"] = f"{end_time:.2f}"
-            new_row[f"end_{event_name}_{server_id}"] = f"{clock + end_time:.2f}"
+            end_clock = clock + end_time
+            new_row[f"end_{event_name}_{server_id}"] = f"{end_clock:.2f}"
             event_id = event_id_map[event_name]
-            event_id_map[f"end_{event_name}_{event_id}_{server_id}"] = f"{event_name.capitalize()[:3]}_{event_id}_{server_id}"
-            passenger_id = passenger_id_map["current_passenger_id"]
-            passenger_states[passenger_id] = f"in_{event_name} {event_name.capitalize()[:3]}_{event_id}_{server_id}"
+            event_id_map[f"end_{event_name}_{server_id}"] = (f"{event_name.capitalize()[:3]}_{event_id}", passenger_id, end_clock)
+            passenger_states[passenger_id] = f"in_{event_name} {event_name.capitalize()[:3]}_{event_id}"
             new_row[f"passenger_{passenger_id}_state"] = passenger_states[passenger_id]
             return True
     return False
@@ -66,7 +65,10 @@ def update_service_state(new_row, event_name, means, clock, passenger_states, ev
 def handle_queue(new_row, event_name, means, clock, passenger_states, event_id_map, passenger_id_map):
     if new_row[f"{event_name}_queue"] > 0:
         new_row[f"{event_name}_queue"] -= 1
-        update_service_state(new_row, event_name, means, clock, passenger_states, event_id_map, passenger_id_map)
+        queued_passengers = [id for id, state in passenger_states.items() if state == f"in_queue_{event_name}"]
+        if queued_passengers:
+            passenger_id = min(queued_passengers)
+            update_service_state(new_row, event_name, means, clock, passenger_states, event_id_map, passenger_id)
 
 def simulate(start_line, end_line, total_rows, checkin_arrivals, ends_checkin, security_arrivals, ends_security, passport_arrivals, ends_passport, boarding_arrivals, ends_boarding):
     means = initialize_means(checkin_arrivals, ends_checkin, security_arrivals, ends_security, passport_arrivals, ends_passport, boarding_arrivals, ends_boarding)
@@ -76,23 +78,6 @@ def simulate(start_line, end_line, total_rows, checkin_arrivals, ends_checkin, s
     event_id_map = {process: 0 for process in means if "_service" not in process}
     passenger_id_map = {"current_passenger_id": 0}
     passenger_states = {}
-    tiempo_espera_checkin = 0
-    tiempo_espera_checkin_prom = 0
-    tiempo_espera_seguridad = 0
-    tiempo_espera_sec_prom = 0
-    tiempo_espera_pasaportes = 0 
-    tiempo_espera_pasap_prom = 0
-    tiempo_espera_embaque = 0
-    tiempo_espera_emb_prom = 0
-
-    tiempo_ocupacion_checkin = 0 
-    porcent_ocup_checkin = 0
-    tiempo_ocupacion_sec = 0
-    porcent_ocup_sec = 0
-    tiempo_ocupacion_pasap = 0
-    porcent_ocup_pasap = 0
-    tiempo_ocupacion_embarque = 0 
-    porcent_ocup_embarq = 0
 
     # Initialize arrival times
     for process in means:
@@ -114,11 +99,14 @@ def simulate(start_line, end_line, total_rows, checkin_arrivals, ends_checkin, s
                 events_times[f"{event}_arrival"] = float(prev_row[f"{event}_arrival_next"])
                 server_count = 3 if event in ["checkin", "boarding"] else 2
                 for server_id in range(1, server_count + 1):
-                    events_times[f"end_{event}_{server_id}"] = float(prev_row[f"end_{event}_{server_id}"])
+                    end_time = prev_row[f"end_{event}_{server_id}"]
+                    if end_time != "":
+                        events_times[f"end_{event}_{server_id}"] = float(end_time)
 
         next_event, clock = min(events_times.items(), key=lambda x: x[1])
 
         new_row = prev_row.copy()
+        new_row["clock"] = clock
 
         for process in means:
             if "_service" not in process:
@@ -129,25 +117,26 @@ def simulate(start_line, end_line, total_rows, checkin_arrivals, ends_checkin, s
             parts = next_event.split('_')
             event_name = parts[1]
             server_id = parts[2]
-            event_id = f"{event_name.capitalize()[:3]}_{event_id_map[event_name]}"
-            # Remove passenger state
-            passenger_key = None
-            for key, value in passenger_states.items():
-                if value.endswith(f"{event_id}_{server_id}"):
-                    passenger_key = key
-                    break
-            if passenger_key:
-                new_row[f"passenger_{passenger_key}_state"] = "-"
-                passenger_states[passenger_key] = "-"
-
-            new_row["event"] = f"End {event_name.capitalize()} ({server_id}) {event_id}"
-            new_row["clock"] = clock
-            new_row[f"end_{event_name}_rnd"] = ""
-            new_row[f"end_{event_name}_time"] = ""
-            new_row[f"end_{event_name}_{server_id}"] = float('inf')
-
-            new_row[f"{event_name}_state_{server_id}"] = "Free"
-            handle_queue(new_row, event_name, means, clock, passenger_states, event_id_map, passenger_id_map)
+            
+            if f"end_{event_name}_{server_id}" in event_id_map:
+                event_id, passenger_id, _ = event_id_map[f"end_{event_name}_{server_id}"]
+                
+                new_row["event"] = f"End {event_name.capitalize()} ({server_id}) {event_id}"
+                
+                if passenger_id in passenger_states:
+                    new_row[f"passenger_{passenger_id}_state"] = "-"
+                    passenger_states[passenger_id] = "-"
+                
+                new_row[f"end_{event_name}_rnd"] = ""
+                new_row[f"end_{event_name}_time"] = ""
+                new_row[f"end_{event_name}_{server_id}"] = ""
+                new_row[f"{event_name}_state_{server_id}"] = "Free"
+                
+                del event_id_map[f"end_{event_name}_{server_id}"]
+                
+                handle_queue(new_row, event_name, means, clock, passenger_states, event_id_map, passenger_id_map)
+            else:
+                print(f"Warning: No matching end event found for {next_event}")
 
         else:
             event_name = next_event.split('_')[0]
@@ -158,7 +147,6 @@ def simulate(start_line, end_line, total_rows, checkin_arrivals, ends_checkin, s
             new_passenger_id = passenger_id_map["current_passenger_id"]
 
             new_row["event"] = f"{event_name.capitalize()} arrival {event_id}"
-            new_row["clock"] = clock
             new_row[f"{event_name}_arrival_rnd"] = f"{random.random():.4f}"
 
             rnd_arrival = float(new_row[f"{event_name}_arrival_rnd"])
@@ -166,62 +154,11 @@ def simulate(start_line, end_line, total_rows, checkin_arrivals, ends_checkin, s
             new_row[f"{event_name}_arrival_time_between"] = f"{arrival_time_between:.2f}"
             new_row[f"{event_name}_arrival_next"] = f"{clock + arrival_time_between:.2f}"
 
-            if not update_service_state(new_row, event_name, means, clock, passenger_states, event_id_map, passenger_id_map):
+            if not update_service_state(new_row, event_name, means, clock, passenger_states, event_id_map, new_passenger_id):
                 new_row[f"{event_name}_queue"] += 1
+                passenger_states[new_passenger_id] = f"in_queue_{event_name}"
+                new_row[f"passenger_{new_passenger_id}_state"] = passenger_states[new_passenger_id]
 
-        # Para el estadístico del punto 1 (tiempo de espera promedio por servicio)...
-        if new_row["checkin_queue"] > 0:
-            tiempo_espera_checkin += (new_row["clock"] - prev_row["clock"])
-            tiempo_espera_checkin_prom += (tiempo_espera_checkin/new_row["checkin_queue"])
-            new_row["promedy_time_checkin"] = round(tiempo_espera_checkin_prom,2)
-
-        if new_row["security_queue"] > 0:
-            tiempo_espera_seguridad += (new_row["clock"] - prev_row["clock"])
-            tiempo_espera_sec_prom += (tiempo_espera_seguridad/new_row["security_queue"])
-            new_row["promedy_time_security"] = round(tiempo_espera_sec_prom,2)
-
-        if new_row["passport_queue"] > 0:
-            tiempo_espera_pasaportes += (new_row["clock"] - prev_row["clock"])            
-            tiempo_espera_pasap_prom += (tiempo_espera_pasaportes/new_row["passport_queue"])
-            new_row["promedy_time_passport"] = round(tiempo_espera_pasap_prom,2)
-
-        if new_row["boarding_queue"] > 0:
-            tiempo_espera_embaque += (new_row["clock"] - prev_row["clock"])            
-            tiempo_espera_emb_prom += (tiempo_espera_embaque/new_row["boarding_queue"])
-            new_row["promedy_time_boarding"] = round(tiempo_espera_emb_prom,2)
-
-        # Para la parte 2 del punto 1...
-        for i in range(1, 4):
-            if new_row[f"checkin_state_{i}"] == "Busy":   
-                tiempo_ocupacion_checkin += (new_row["clock"] - prev_row["clock"])
-                porcent_ocup_checkin = (tiempo_ocupacion_checkin/new_row["clock"]) * 100
-                new_row["ocupation_time_checkin"] = round(tiempo_ocupacion_checkin,2)
-                new_row["porcent_time_checkin"] = round(porcent_ocup_checkin,2)
-                break
-
-        for i in range(1, 3):
-            if new_row[f"security_state_{i}"] == "Busy":   
-                tiempo_ocupacion_sec += (new_row["clock"] - prev_row["clock"])
-                porcent_ocup_sec = (tiempo_ocupacion_sec/new_row["clock"]) * 100
-                new_row["ocupation_time_security"] = round(tiempo_ocupacion_sec,2)
-                new_row["porcent_time_security"] = round(porcent_ocup_sec,2)
-                break
-
-        for i in range(1, 3):
-            if new_row[f"passport_state_{i}"] == "Busy":   
-                tiempo_ocupacion_pasap += (new_row["clock"] - prev_row["clock"])
-                porcent_ocup_pasap = (tiempo_ocupacion_pasap/new_row["clock"]) * 100
-                new_row["ocupation_time_passport"] = round(tiempo_ocupacion_pasap,2)
-                new_row["porcent_time_passport"] = round(porcent_ocup_pasap,2)
-                break
-
-        for i in range(1, 4):
-            if new_row[f"boarding_state_{i}"] == "Busy":   
-                tiempo_ocupacion_embarque += (new_row["clock"] - prev_row["clock"])
-                porcent_ocup_embarq = (tiempo_ocupacion_embarque/new_row["clock"]) * 100
-                new_row["ocupation_time_boarding"] = round(tiempo_ocupacion_embarque, 2)
-                new_row["porcent_time_boarding"] = round(porcent_ocup_embarq,2)
-                break
         # Ensure passenger states are updated in the new row
         for key in passenger_states:
             new_row[f"passenger_{key}_state"] = passenger_states.get(key, "-")
