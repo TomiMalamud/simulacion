@@ -5,25 +5,25 @@
     <div class="rounded border border-dark-subtle bg-secondary-subtle p-4 mt-5 container row">
         <div class="col-md-6">
             <div class="form-group mb-3">
-                <label for="start_line">Fila inicial</label>
+                <label for="start_row">Fila inicial</label>
                 <input
                     type="number"
-                    id="start_line"
-                    name="start_line"
+                    id="start_row"
+                    name="start_row"
                     class="form-control mt-1"
                     required
-                    value="{{ request.args.get('start_line', '0') }}"
+                    value="{{ request.args.get('start_row', '0') }}"
                 />
             </div>
             <div class="form-group mb-3">
-                <label for="end_line">Filas adicionales a mostrar</label>
+                <label for="additional_rows">Filas adicionales a mostrar</label>
                 <input
                     type="number"
-                    id="end_line"
-                    name="end_line"
+                    id="additional_rows"
+                    name="additional_rows"
                     class="form-control mt-1"
                     required
-                    value="{{ request.args.get('end_line', '100') }}"
+                    value="{{ request.args.get('additional_rows', '100') }}"
                 />
             </div>
             <div class="form-group mb-3">
@@ -165,6 +165,7 @@
   <table class="table table-bordered position-absolute start-0 mt-4">
     <thead class="text-center">
       <tr>
+        <th rowspan="3">No.</th>
         <th rowspan="3">Event</th>
         <th rowspan="3">Clock (min)</th>
         <th colspan="3">Check-in Arrival</th>
@@ -264,75 +265,76 @@
     </thead>
 
     <tbody class="table-group-divider">
-      {% for row in data %}
-      <tr>
-        <td>{{ row.event }}</td>
-        <td>{{ row.clock }}</td>
-        <td>{{ row.checkin_arrival_rnd }}</td>
-        <td>{{ row.checkin_arrival_time_between }}</td>
-        <td>{{ row.checkin_arrival_next }}</td>
-        <td>{{ row.security_arrival_rnd }}</td>
-        <td>{{ row.security_arrival_time_between }}</td>
-        <td>{{ row.security_arrival_next }}</td>
-        <td>{{ row.passport_arrival_rnd }}</td>
-        <td>{{ row.passport_arrival_time_between }}</td>
-        <td>{{ row.passport_arrival_next }}</td>
-        <td>{{ row.boarding_arrival_rnd }}</td>
-        <td>{{ row.boarding_arrival_time_between }}</td>
-        <td>{{ row.boarding_arrival_next }}</td>
-        <td>{{ row.end_checkin_rnd }}</td>
-        <td>{{ row.end_checkin_time }}</td>
-        <td>{{ row.end_checkin_1 }}</td>
-        <td>{{ row.end_checkin_2 }}</td>
-        <td>{{ row.end_checkin_3 }}</td>
-        <td>{{ row.end_security_rnd }}</td>
-        <td>{{ row.end_security_time }}</td>
-        <td>{{ row.end_security_1 }}</td>
-        <td>{{ row.end_security_2 }}</td>
-        <td>{{ row.end_passport_rnd }}</td>
-        <td>{{ row.end_passport_time }}</td>
-        <td>{{ row.end_passport_1 }}</td>
-        <td>{{ row.end_passport_2 }}</td>
-        <td>{{ row.end_boarding_rnd }}</td>
-        <td>{{ row.end_boarding_time }}</td>
-        <td>{{ row.end_boarding_1 }}</td>
-        <td>{{ row.end_boarding_2 }}</td>
-        <td>{{ row.end_boarding_3 }}</td>
-        <td>{{ row.checkin_state_1 }}</td>
-        <td>{{ row.checkin_state_2 }}</td>
-        <td>{{ row.checkin_state_3 }}</td>
-        <td>{{ row.checkin_queue }}</td>
-        <td>{{ row.security_state_1 }}</td>
-        <td>{{ row.security_state_2 }}</td>
-        <td>{{ row.security_queue }}</td>
-        <td>{{ row.passport_state_1 }}</td>
-        <td>{{ row.passport_state_2 }}</td>
-        <td>{{ row.passport_queue }}</td>
-        <td>{{ row.boarding_state_1 }}</td>
-        <td>{{ row.boarding_state_2 }}</td>
-        <td>{{ row.boarding_state_3 }}</td>
-        <td>{{ row.boarding_queue }}</td>
-        <td>{{ row.ac_waiting_time_checkin }}</td>
-        <td>{{ row.average_time_checkin }}</td>
-        <td>{{ row.ocupation_time_checkin }}</td>
-        <td>{{ row.percent_time_checkin }}</td>
-        <td>{{ row.ac_waiting_time_security }}</td>
-        <td>{{ row.average_time_security }}</td>
-        <td>{{ row.ocupation_time_security }}</td>
-        <td>{{ row.percent_time_security }}</td>
-        <td>{{ row.ac_waiting_time_passport }}</td>
-        <td>{{ row.average_time_passport }}</td>
-        <td>{{ row.ocupation_time_passport }}</td>
-        <td>{{ row.percent_time_passport }}</td>
-        <td>{{ row.ac_waiting_time_boarding }}</td>
-        <td>{{ row.average_time_boarding }}</td>
-        <td>{{ row.ocupation_time_boarding }}</td>
-        <td>{{ row.percent_time_boarding }}</td>
-        {% for i in range(1, passenger_count + 1) %}
-        <td>{{ row['passenger_' ~ i ~ '_state'] }}</td>
-        {% endfor %}
-      </tr>
+    {% for row in data %}
+    <tr>
+      <td>{{ row.row_id }}</td>
+      <td>{{ row.event }}</td>
+      <td>{{ row.clock }}</td>
+      <td>{{ row.checkin_arrival_rnd }}</td>
+      <td>{{ row.checkin_arrival_time_between }}</td>
+      <td>{{ row.checkin_arrival_next }}</td>
+      <td>{{ row.security_arrival_rnd }}</td>
+      <td>{{ row.security_arrival_time_between }}</td>
+      <td>{{ row.security_arrival_next }}</td>
+      <td>{{ row.passport_arrival_rnd }}</td>
+      <td>{{ row.passport_arrival_time_between }}</td>
+      <td>{{ row.passport_arrival_next }}</td>
+      <td>{{ row.boarding_arrival_rnd }}</td>
+      <td>{{ row.boarding_arrival_time_between }}</td>
+      <td>{{ row.boarding_arrival_next }}</td>
+      <td>{{ row.end_checkin_rnd }}</td>
+      <td>{{ row.end_checkin_time }}</td>
+      <td>{{ row.end_checkin_1 }}</td>
+      <td>{{ row.end_checkin_2 }}</td>
+      <td>{{ row.end_checkin_3 }}</td>
+      <td>{{ row.end_security_rnd }}</td>
+      <td>{{ row.end_security_time }}</td>
+      <td>{{ row.end_security_1 }}</td>
+      <td>{{ row.end_security_2 }}</td>
+      <td>{{ row.end_passport_rnd }}</td>
+      <td>{{ row.end_passport_time }}</td>
+      <td>{{ row.end_passport_1 }}</td>
+      <td>{{ row.end_passport_2 }}</td>
+      <td>{{ row.end_boarding_rnd }}</td>
+      <td>{{ row.end_boarding_time }}</td>
+      <td>{{ row.end_boarding_1 }}</td>
+      <td>{{ row.end_boarding_2 }}</td>
+      <td>{{ row.end_boarding_3 }}</td>
+      <td>{{ row.checkin_state_1 }}</td>
+      <td>{{ row.checkin_state_2 }}</td>
+      <td>{{ row.checkin_state_3 }}</td>
+      <td>{{ row.checkin_queue }}</td>
+      <td>{{ row.security_state_1 }}</td>
+      <td>{{ row.security_state_2 }}</td>
+      <td>{{ row.security_queue }}</td>
+      <td>{{ row.passport_state_1 }}</td>
+      <td>{{ row.passport_state_2 }}</td>
+      <td>{{ row.passport_queue }}</td>
+      <td>{{ row.boarding_state_1 }}</td>
+      <td>{{ row.boarding_state_2 }}</td>
+      <td>{{ row.boarding_state_3 }}</td>
+      <td>{{ row.boarding_queue }}</td>
+      <td>{{ row.ac_waiting_time_checkin }}</td>
+      <td>{{ row.average_time_checkin }}</td>
+      <td>{{ row.ocupation_time_checkin }}</td>
+      <td>{{ row.percent_time_checkin }}</td>
+      <td>{{ row.ac_waiting_time_security }}</td>
+      <td>{{ row.average_time_security }}</td>
+      <td>{{ row.ocupation_time_security }}</td>
+      <td>{{ row.percent_time_security }}</td>
+      <td>{{ row.ac_waiting_time_passport }}</td>
+      <td>{{ row.average_time_passport }}</td>
+      <td>{{ row.ocupation_time_passport }}</td>
+      <td>{{ row.percent_time_passport }}</td>
+      <td>{{ row.ac_waiting_time_boarding }}</td>
+      <td>{{ row.average_time_boarding }}</td>
+      <td>{{ row.ocupation_time_boarding }}</td>
+      <td>{{ row.percent_time_boarding }}</td>
+      {% for i in range(1, passenger_count + 1) %}
+      <td>{{ row['passenger_' ~ i ~ '_state'] }}</td>
       {% endfor %}
+    </tr>
+    {% endfor %}
     </tbody>
   </table>
   {% endif %}

@@ -24,6 +24,7 @@ def initialize_means(checkin_arrivals, ends_checkin, security_arrivals, ends_sec
 
 def create_initial_row(means):
     initial_row = {
+        "row_id": 0,
         "event": "Initialization",
         "clock": 0    
     }
@@ -70,7 +71,7 @@ def handle_queue(new_row, event_name, means, clock, passenger_states, event_id_m
             passenger_id = min(queued_passengers)
             update_service_state(new_row, event_name, means, clock, passenger_states, event_id_map, passenger_id)
 
-def simulate(start_line, end_line, total_rows, checkin_arrivals, ends_checkin, security_arrivals, ends_security, passport_arrivals, ends_passport, boarding_arrivals, ends_boarding):
+def simulate(start_row, additional_rows, total_rows, checkin_arrivals, ends_checkin, security_arrivals, ends_security, passport_arrivals, ends_passport, boarding_arrivals, ends_boarding):
     means = initialize_means(checkin_arrivals, ends_checkin, security_arrivals, ends_security, passport_arrivals, ends_passport, boarding_arrivals, ends_boarding)
     all_rows = [create_initial_row(means)]
     rows_to_show = []
@@ -89,7 +90,8 @@ def simulate(start_line, end_line, total_rows, checkin_arrivals, ends_checkin, s
 
     rows_to_show.append(all_rows[0])
 
-    row_count = 1
+    row_count = 0
+    rows_shown = 0
     while row_count <= total_rows:
         prev_row = all_rows[-1]
         events_times = {}
@@ -107,6 +109,7 @@ def simulate(start_line, end_line, total_rows, checkin_arrivals, ends_checkin, s
 
         new_row = prev_row.copy()
         new_row["clock"] = clock
+        new_row["row_id"] = row_count + 1
 
         for process in means:
             if "_service" not in process:
@@ -165,10 +168,14 @@ def simulate(start_line, end_line, total_rows, checkin_arrivals, ends_checkin, s
 
         all_rows.append(new_row)
 
-        if row_count >= start_line and row_count <= end_line:
+        if row_count >= start_row and rows_shown < additional_rows:
             rows_to_show.append(new_row)
+            rows_shown += 1
 
         row_count += 1
+
+    if rows_to_show[-1] != all_rows[-1]:
+        rows_to_show.append(all_rows[-1])
 
     for row in rows_to_show:
         for key, value in row.items():
@@ -180,8 +187,8 @@ def simulate(start_line, end_line, total_rows, checkin_arrivals, ends_checkin, s
 
 @tp4.route('/tp4', methods=['GET'])
 def tp4_render():
-    start_line = int(request.args.get("start_line", default=0, type=int))
-    end_line = int(request.args.get("end_line", default=100, type=int))
+    start_row = int(request.args.get("start_row", default=0, type=int))
+    additional_rows = int(request.args.get("additional_rows", default=100, type=int))
     total_rows = int(request.args.get("total_rows", default=100, type=int))
     checkin_arrivals = int(request.args.get("checkin_arrivals", default=50, type=int))
     ends_checkin = int(request.args.get("ends_checkin", default=15, type=int))
@@ -192,7 +199,7 @@ def tp4_render():
     boarding_arrivals = int(request.args.get("boarding_arrivals", default=60, type=int))
     ends_boarding = int(request.args.get("ends_boarding", default=25, type=int))
     
-    data, passenger_count = simulate(start_line, end_line, total_rows, checkin_arrivals, ends_checkin, security_arrivals, ends_security, passport_arrivals, ends_passport, boarding_arrivals, ends_boarding)
+    data, passenger_count = simulate(start_row, additional_rows, total_rows, checkin_arrivals, ends_checkin, security_arrivals, ends_security, passport_arrivals, ends_passport, boarding_arrivals, ends_boarding)
     return render_template("tp4.html", data=data, passenger_count=passenger_count, request=request)
 
 if __name__ == "__main__":
