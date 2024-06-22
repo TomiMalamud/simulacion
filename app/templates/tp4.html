@@ -241,7 +241,7 @@
         <th rowspan="3">Tiempo promedio espera embarque</th>
         <th rowspan="3">Tiempo ocupación embarque</th>
         <th rowspan="3">Porcentaje Ocupación embarque</th>
-        <th colspan="{{ active_passengers | length * 2}}">Passenger</th>
+        <th colspan="{{ passengers_in_range | length * 2}}">Passenger</th>
       </tr>
       <tr>
         <th rowspan="2">Rnd</th>
@@ -288,10 +288,10 @@
         <th>2</th>
         <th>3</th>
         <th rowspan="2">Queue</th>
-        {% for key in active_passengers %}
-        <th colspan="2">{{ key }}</th>
+        {% for passenger in passengers_in_range %}
+        <th colspan="2">{{ passenger }}</th>
         {% endfor %}
-      </tr>
+    </tr>
       <tr>
         {% for i in range(1, checkin_servers + 1) %}
         <th>State</th>
@@ -303,11 +303,11 @@
         <th>State</th>
         <th>State</th>
         <th>State</th>
-        {% for key in active_passengers %}
+        {% for passenger in passengers_in_range %}
         <th>State</th>
-        <th>Waiting start</th>
+        <th>Started waiting</th>
         {% endfor %}
-      </tr>
+    </tr>
     </thead>
 
     <tbody class="table-group-divider">
@@ -376,9 +376,9 @@
         <td>{{ row.average_time_boarding }}</td>
         <td>{{ row.ocupation_time_boarding }}</td>
         <td>{{ row.percent_time_boarding }}</td>
-        {% for key in active_passengers %}
+        {% for key in passengers_in_range %}
         <td>{{ row['passenger_' ~ key ~ '_state'] }}</td>
-        <td>{{ row['passenger_' ~ key ~ '_waiting_time'] }}</td>
+        <td>{{ row['passenger_' ~ key ~ '_started_waiting'] }}</td>
         {% endfor %}
       </tr>
       {% endfor %}
