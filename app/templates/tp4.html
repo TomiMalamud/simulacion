@@ -1,7 +1,7 @@
 {% extends 'base.html' %} {% block content %}
 <div class="container p-5 w-80">
   <h1 class="text-center">TP4 - Simulación de un aeropuerto</h1>
-  <form method="GET" action="/tp4">
+  <form method="GET" action="/tp4" id="simulation-form">
     <div
       class="rounded border border-dark-subtle bg-secondary-subtle p-4 mt-5 container row"
     >
@@ -25,7 +25,7 @@
             name="additional_rows"
             class="form-control mt-1"
             required
-            value="{{ request.args.get('additional_rows', '100') }}"
+            value="{{ request.args.get('additional_rows', '300') }}"
           />
         </div>
         <div class="form-group mb-3">
@@ -36,7 +36,7 @@
             name="total_rows"
             class="form-control mt-1"
             required
-            value="{{ request.args.get('total_rows', '100') }}"
+            value="{{ request.args.get('total_rows', '1000') }}"
           />
         </div>
 
@@ -199,12 +199,44 @@
         </div>
       </div>
       <div class="col-12 mt-4">
-        <button type="submit" class="btn w-100 btn-light">
+        <button type="submit" class="btn w-100 btn-light" id="simulate-button">
           Ejecutar Simulación
+        </button>
+        <button class="btn btn-light w-100 d-none" type="button" id="loading-button" disabled>
+          <span class="spinner-grow spinner-grow-sm mr-2" aria-hidden="true"></span>
+          <span role="status">Cargando...</span>
         </button>
       </div>
     </div>
   </form>
+  {% if final_averages and final_percents %}
+  <div class="mt-4">
+    <h3>Resumen</h3>
+    <div class="row">
+      <div class="col-md-6">
+        <h4>Tiempo promedio de espera</h4>
+        <ul>
+          {% for event, avg_time in final_averages.items() %}
+          <li>{{ event }}: {{ avg_time }} minutos</li>
+          {% endfor %}
+        </ul>
+        {% if min_avg_event %}
+        <p>Para esperar el menor tiempo posible, el pasajero debe ir a {{ min_avg_event }}.</p>
+        {% endif %}
+
+      </div>
+      <div class="col-md-6">
+        <h4>Porcentaje de ocupación de cada servidor</h4>
+        <ul>
+          {% for event, percent_time in final_percents.items() %}
+          <li>{{ event }}: {{ percent_time }}%</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
 
   {% if data %}
   <table class="table text-center table-bordered position-absolute start-0 mt-4">
@@ -274,9 +306,9 @@
         <th rowspan="2">1</th>
         <th rowspan="2">2</th>
         <th rowspan="2">3</th>
-        <th>1</th>
-        <th>2</th>
-        <th>3</th>
+        {% for i in range(1, checkin_servers + 1) %}
+        <th>{{ i }}</th>
+        {% endfor %}
         <th rowspan="2">Queue</th>
         <th>1</th>
         <th>2</th>
@@ -362,20 +394,20 @@
         <td>{{ row.boarding_queue }}</td>
         <td>{{ row.ac_waiting_time_checkin }}</td>
         <td>{{ row.average_time_checkin }}</td>
-        <td>{{ row.ocupation_time_checkin }}</td>
-        <td>{{ row.percent_time_checkin }}</td>
+        <td>{{ row.occupation_time_checkin }}</td>
+        <td>{{ row.percent_time_checkin }} %</td>
         <td>{{ row.ac_waiting_time_security }}</td>
         <td>{{ row.average_time_security }}</td>
-        <td>{{ row.ocupation_time_security }}</td>
-        <td>{{ row.percent_time_security }}</td>
+        <td>{{ row.occupation_time_security }}</td>
+        <td>{{ row.percent_time_security }} %</td>
         <td>{{ row.ac_waiting_time_passport }}</td>
         <td>{{ row.average_time_passport }}</td>
-        <td>{{ row.ocupation_time_passport }}</td>
-        <td>{{ row.percent_time_passport }}</td>
+        <td>{{ row.occupation_time_passport }}</td>
+        <td>{{ row.percent_time_passport }} %</td>
         <td>{{ row.ac_waiting_time_boarding }}</td>
         <td>{{ row.average_time_boarding }}</td>
-        <td>{{ row.ocupation_time_boarding }}</td>
-        <td>{{ row.percent_time_boarding }}</td>
+        <td>{{ row.occupation_time_boarding }}</td>
+        <td>{{ row.percent_time_boarding }} %</td>
         {% for key in passengers_in_range %}
         <td>{{ row['passenger_' ~ key ~ '_state'] }}</td>
         <td>{{ row['passenger_' ~ key ~ '_started_waiting'] }}</td>
@@ -386,5 +418,11 @@
   </table>
   {% endif %}
 </div>
-
+<script>
+  document.getElementById('simulation-form').addEventListener('submit', function() {
+      document.getElementById('simulate-button').classList.add('d-none');
+      document.getElementById('loading-button').classList.remove('d-none');
+  });
+  </script>
+  
 {% endblock %}
