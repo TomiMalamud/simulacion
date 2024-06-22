@@ -283,6 +283,7 @@ def tp4_render():
     additional_rows = int(request.args.get("additional_rows", default=100, type=int))
     total_rows = int(request.args.get("total_rows", default=100, type=int))
     checkin_arrivals = int(request.args.get("checkin_arrivals", default=50, type=int))
+    checkin_servers = int(request.args.get('checkin_servers', default=3, type=int))
     ends_checkin = int(request.args.get("ends_checkin", default=15, type=int))
     security_arrivals = int(request.args.get("security_arrivals", default=40, type=int))
     ends_security = int(request.args.get("ends_security", default=20, type=int))
@@ -295,7 +296,7 @@ def tp4_render():
         start_row,
         additional_rows,
         total_rows,
-        checkin_arrivals,
+        checkin_arrivals,    
         ends_checkin,
         security_arrivals,
         ends_security,
@@ -310,6 +311,7 @@ def tp4_render():
         passenger_count=passenger_count,
         active_passengers=active_passengers,
         request=request,
+        checkin_servers=checkin_servers,        
     )
 
 
