@@ -52,6 +52,8 @@ def simulate(
 
     row_count = 0
     rows_shown = 0
+    total_rows = 10000 if total_rows > 50000 else total_rows
+
     while row_count <= total_rows:
         prev_row = all_rows[-1]
         events_times = {}
@@ -149,6 +151,8 @@ def simulate(
                 new_row[f"passenger_{new_passenger_id}_state"] = passenger_states[
                     new_passenger_id
                 ]
+                new_row[f"passenger_{new_passenger_id}_started_waiting"] = clock  # Initialize when the passenger starts waiting
+
 
         # Ensure passenger states are updated in the new row
         for key in passenger_states:

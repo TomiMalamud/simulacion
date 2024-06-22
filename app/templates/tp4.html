@@ -207,8 +207,8 @@
   </form>
 
   {% if data %}
-  <table class="table table-bordered position-absolute start-0 mt-4">
-    <thead class="text-center">
+  <table class="table text-center table-bordered position-absolute start-0 mt-4">
+    <thead>
       <tr>
         <th rowspan="3">#</th>
         <th rowspan="3">Event</th>
@@ -314,7 +314,7 @@
       {% for row in data %}
       <tr>
         <td>{{ row.row_id }}</td>
-        <td>{{ row.event }}</td>
+        <td class="text-start">{{ row.event }}</td>
         <td>{{ row.clock }}</td>
         <td>{{ row.checkin_arrival_rnd }}</td>
         <td>{{ row.checkin_arrival_time_between }}</td>
