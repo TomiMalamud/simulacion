@@ -271,7 +271,7 @@ def simulate(
         for key, value in row.items():
             if value == float("inf"):
                 row[key] = ""
-    
+
     passenger_count = passenger_id_map["current_passenger_id"]
 
     return rows_to_show, passenger_count, active_passengers
@@ -305,7 +305,11 @@ def tp4_render():
         ends_boarding,
     )
     return render_template(
-        "tp4.html", data=data, passenger_count=passenger_count, active_passengers=active_passengers, request=request
+        "tp4.html",
+        data=data,
+        passenger_count=passenger_count,
+        active_passengers=active_passengers,
+        request=request,
     )
 
 

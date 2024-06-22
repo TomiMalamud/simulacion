@@ -8,11 +8,13 @@ import base64
 import random
 import math
 
-tp2 = Blueprint('tp2', __name__, template_folder='templates')
+tp2 = Blueprint("tp2", __name__, template_folder="templates")
+
 
 @tp2.route("/tp2")
 def tp2_render():
     return render_template("tp2.html")
+
 
 matplotlib.use("Agg")
 
@@ -234,6 +236,7 @@ def estadistico_ks(observed_freq, expected_freq):
     ks = np.max(np.abs(cum_observed - cum_expected))
 
     return ks
+
 
 @tp2.route("/generate", methods=["POST"])
 def generar_numeros():
