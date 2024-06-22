@@ -47,6 +47,9 @@ def simulate(
                 f"{process}_arrival_time_between"
             ] = f"{arrival_time_between:.2f}"
             all_rows[0][f"{process}_arrival_next"] = f"{arrival_time_between:.2f}"
+            all_rows[0][f"ac_waiting_time_{process}"] = "0.00"
+            all_rows[0][f"average_time_{process}"] = "0.00"
+
 
     rows_to_show.append(all_rows[0])
 
@@ -157,6 +160,9 @@ def simulate(
         # Ensure passenger states are updated in the new row
         for key in passenger_states:
             new_row[f"passenger_{key}_state"] = passenger_states.get(key, "-")
+        for event in means:
+            if "_service" not in event:
+                new_row[f"ac_waiting_time_{event}"] = new_row.get(f"ac_waiting_time_{event}", "0.00")
 
         all_rows.append(new_row)
 

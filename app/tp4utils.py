@@ -73,6 +73,7 @@ def update_service_state(
                 f"in_{event_name} {event_name.capitalize()[:3]}_{event_id}"
             )
             new_row[f"passenger_{passenger_id}_state"] = passenger_states[passenger_id]
+            new_row[f"passenger_{passenger_id}_started_waiting"] = "-"
             return True
     return False
 
@@ -89,6 +90,18 @@ def handle_queue(
         ]
         if queued_passengers:
             passenger_id = min(queued_passengers)
+            
+            # Calculate waiting time
+            started_waiting = float(new_row[f"passenger_{passenger_id}_started_waiting"])
+            waiting_time = clock - started_waiting
+            
+            # Update accumulated waiting time
+            prev_ac_waiting_time = float(new_row.get(f"ac_waiting_time_{event_name}", 0))
+            new_row[f"ac_waiting_time_{event_name}"] = f"{prev_ac_waiting_time + waiting_time:.2f}"
+            
+            # Reset started_waiting time
+            new_row[f"passenger_{passenger_id}_started_waiting"] = "-"
+            
             update_service_state(
                 new_row,
                 event_name,
@@ -98,4 +111,3 @@ def handle_queue(
                 event_id_map,
                 passenger_id,
             )
-
