@@ -163,6 +163,14 @@ def simulate(
         for event in means:
             if "_service" not in event:
                 new_row[f"ac_waiting_time_{event}"] = new_row.get(f"ac_waiting_time_{event}", "0.00")
+                ac_waiting_time = float(new_row[f"ac_waiting_time_{event}"])
+                event_count = arrival_counts[event]
+                if event_count > 0:
+                    average_time = ac_waiting_time / event_count
+                    new_row[f"average_time_{event}"] = f"{average_time:.2f}"
+                else:
+                    new_row[f"average_time_{event}"] = "0.00"
+
 
         all_rows.append(new_row)
 

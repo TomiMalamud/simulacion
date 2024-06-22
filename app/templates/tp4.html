@@ -208,7 +208,7 @@
 
   {% if data %}
   <table class="table text-center table-bordered position-absolute start-0 mt-4">
-    <thead class="sticky-header">
+    <thead>
       <tr>
         <th rowspan="3">#</th>
         <th rowspan="3">Event</th>
@@ -386,11 +386,5 @@
   </table>
   {% endif %}
 </div>
-<style>
-  th {
-    position: sticky;
-    top: 0;
-  }
-</style>
 
 {% endblock %}
