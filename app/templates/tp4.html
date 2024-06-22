@@ -233,6 +233,18 @@
           {% endfor %}
         </ul>
       </div>
+      <div class="col-md-6">
+          <h4>Cantidad total de personas atendidas</h4>
+          <p>{{passengers_completed}}</p>
+      </div>
+      <div class="col-md-6">
+        <h4>Cantidad máxima de personas en cola de seguridad</h4>
+        <p>{{max_security_queue}}</p>
+      </div>
+      <div class="col-md-6">
+        <h4>Cantidad promedio de personas en cola de pasaporte</h4>
+        <p>{{cantidad_promedio_cola}}</p>
+      </div>
     </div>
   </div>
   {% endif %}
@@ -273,6 +285,9 @@
         <th rowspan="3">Tiempo promedio espera embarque</th>
         <th rowspan="3">Tiempo ocupación embarque</th>
         <th rowspan="3">Porcentaje Ocupación embarque</th>
+        <th rowspan="3">Cantidad personas atendidas</th>
+        <th rowspan="4">Máxima cantidad de personas en cola de seguridad</th>
+        <th rowspan="3">Cantidad promedio personas en cola de pasaporte</th>
         <th colspan="{{ passengers_in_range | length * 2}}">Passenger</th>
       </tr>
       <tr>
@@ -408,6 +423,9 @@
         <td>{{ row.average_time_boarding }}</td>
         <td>{{ row.occupation_time_boarding }}</td>
         <td>{{ row.percent_time_boarding }} %</td>
+        <td>{{ row.amount_people_attended }} </td>
+        <td>{{ row.max_amount_sec_queue }} </td>
+        <td>{{ row.promedy_amount_passport_queue }} </td>
         {% for key in passengers_in_range %}
         <td>{{ row['passenger_' ~ key ~ '_state'] }}</td>
         <td>{{ row['passenger_' ~ key ~ '_started_waiting'] }}</td>

@@ -39,6 +39,10 @@ def simulate(
     passenger_states = {}
     passengers_in_range = set()  # New set to track active passengers
     occupation_start_times = {}
+    passenger_completed = 0
+    max_security_queue = 0
+    cantidad_promedio_cola = 0
+    passport_queue_time_sum = 0 
 
     # Initialize arrival times
     for process in means:
@@ -116,6 +120,9 @@ def simulate(
                     new_row[f"passenger_{passenger_id}_state"] = "-"
                     passenger_states[passenger_id] = "-"
 
+                passenger_completed += 1
+                new_row["amount_people_attended"] = passenger_completed
+
                 new_row[f"end_{event_name}_rnd"] = ""
                 new_row[f"end_{event_name}_time"] = ""
                 new_row[f"end_{event_name}_{server_id}"] = ""
@@ -190,6 +197,16 @@ def simulate(
                 new_row[f"passenger_{new_passenger_id}_started_waiting"] = (
                     clock  # Initialize when the passenger starts waiting
                 )
+                # Actualizar el máximo de la cola de seguridad
+                if event_name == "security":
+                    max_security_queue = max(max_security_queue, new_row["security_queue"])
+
+            new_row["amount_people_attended"] = passenger_completed
+        
+
+        # Agregar el máximo de la cola de seguridad a cada fila
+        new_row["max_amount_sec_queue"] = max_security_queue
+
 
         # Ensure passenger states are updated in the new row
         for key in passenger_states:
@@ -206,6 +223,17 @@ def simulate(
                     new_row[f"average_time_{event}"] = f"{average_time:.2f}"
                 else:
                     new_row[f"average_time_{event}"] = "0.00"
+                
+                if event == "passport":
+                    passport_queue_time_sum = ac_waiting_time  # Actualiza la suma del tiempo de espera para pasaporte
+                
+                if clock > 0:
+                    cantidad_promedio_cola = passport_queue_time_sum / clock
+                    new_row["promedy_amount_passport_queue"] = f"{cantidad_promedio_cola:.2f}"
+                else:
+                    new_row["promedy_amount_passport_queue"] = "0.00"
+
+
                 if event in occupation_start_times:
                     current_occupation_time = clock - occupation_start_times[event]
                     prev_occupation_time = float(new_row[f"occupation_time_{event}"])
@@ -267,7 +295,7 @@ def simulate(
     print("Final Averages:", final_averages)
     print("Final Percents:", final_percents)
 
-    return rows_to_show, passenger_count, passengers_in_range, final_averages, final_percents
+    return rows_to_show, passenger_count, passengers_in_range, final_averages, final_percents, passenger_completed, max_security_queue, cantidad_promedio_cola
 
 
 @tp4.route("/tp4", methods=["GET"])
@@ -279,6 +307,9 @@ def tp4_render():
     final_averages = {}
     final_percents = {}
     min_avg_event = None
+    passengers_completed = 0
+    max_security_queue = 0
+    cantidad_promedio_cola = 0
 
     if request.args:
         start_row = int(request.args.get("start_row", default=0, type=int))
@@ -305,7 +336,7 @@ def tp4_render():
         ends_boarding = int(request.args.get("ends_boarding", default=25, type=int))
         start_time = time.time()  # Start the timer
 
-        data, passenger_count, passengers_in_range, final_averages, final_percents = (
+        data, passenger_count, passengers_in_range, final_averages, final_percents, passengers_completed, max_security_queue, cantidad_promedio_cola = (
             simulate(
                 start_row,
                 additional_rows,
@@ -343,6 +374,9 @@ def tp4_render():
         final_averages=final_averages,
         final_percents=final_percents,
         min_avg_event=min_avg_event,
+        passengers_completed = passengers_completed,
+        max_security_queue = max_security_queue,
+        cantidad_promedio_cola = round(cantidad_promedio_cola,2)
     )
 
 
