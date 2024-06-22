@@ -20,6 +20,8 @@ def simulate(
     ends_passport,
     boarding_arrivals,
     ends_boarding,
+    emabalaje_arrivals,
+    ends_embalaje,
 ):
     means = initialize_means(
         checkin_arrivals,
@@ -30,6 +32,8 @@ def simulate(
         ends_passport,
         boarding_arrivals,
         ends_boarding,
+        emabalaje_arrivals,
+        ends_embalaje
     )
     all_rows = [create_initial_row(means, checkin_servers)]
     rows_to_show = []
@@ -334,7 +338,14 @@ def tp4_render():
             request.args.get("boarding_arrivals", default=60, type=int)
         )
         ends_boarding = int(request.args.get("ends_boarding", default=25, type=int))
-        start_time = time.time()  # Start the timer
+
+        embalaje_arrivals = int(
+            request.args.get("embalaje_arrivals", default=60, type=int)
+        )
+
+        ends_embalaje = int(request.args.get("ends_embalaje", default=25, type=int))
+        start_time = time.time()
+
 
         data, passenger_count, passengers_in_range, final_averages, final_percents, passengers_completed, max_security_queue, cantidad_promedio_cola = (
             simulate(
@@ -350,6 +361,8 @@ def tp4_render():
                 ends_passport,
                 boarding_arrivals,
                 ends_boarding,
+                embalaje_arrivals,
+                ends_embalaje
             )
         )
 

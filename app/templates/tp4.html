@@ -197,6 +197,42 @@
             </div>
           </div>
         </div>
+        <div class="row">
+          <div class="form-group col-6 mb-3">
+            <label for="passport_arrivals">Tasa de llegada embalaje (punto 7)</label>
+            <div class="input-group mt-1">
+              <input
+                class="form-control"
+                type="number"
+                id="embalaje_arrivals"
+                name="embalaje_arrivals"
+                value="{{ request.args.get('embalaje_arrivals', '25') }}"
+              />
+              <span
+                class="input-group-text"
+                style="font-size: 0.8em; color: lightgray"
+                >por hora</span
+              >
+            </div>
+          </div>
+          <div class="form-group col-6 mb-3">
+            <label for="ends_passport">Tasa de atención embalaje (punto 7)</label>
+            <div class="input-group mt-1">
+              <input
+                class="form-control"
+                type="number"
+                id="ends_embalaje"
+                name="ends_embalaje"
+                value="{{ request.args.get('ends_embalaje', '12') }}"
+              />
+              <span
+                class="input-group-text"
+                style="font-size: 0.8em; color: lightgray"
+                >por hora</span
+              >
+            </div>
+          </div>
+        </div>
       </div>
       <div class="col-12 mt-4">
         <button type="submit" class="btn w-100 btn-light" id="simulate-button">
@@ -261,14 +297,17 @@
         <th colspan="3">Security Arrival</th>
         <th colspan="3">Passport Arrival</th>
         <th colspan="3">Boarding Arrival</th>
+        <th colspan="4">Embalaje Arrival</th>
         <th colspan="{{ checkin_servers + 2 }}">End Check-in</th>
         <th colspan="4">End Security</th>
         <th colspan="4">End Passport</th>
         <th colspan="5">End Boarding</th>
+        <th colspan="4">End Embalaje</th>
         <th colspan="{{ checkin_servers + 1 }}">Check-in</th>
         <th colspan="3">Security</th>
         <th colspan="3">Passport</th>
         <th colspan="4">Boarding</th>
+        <th colspan="3">Embalaje</th>
         <th rowspan="3">AC Waiting Time Check-in</th>
         <th rowspan="3">Tiempo promedio espera checkin</th>
         <th rowspan="3">Tiempo ocupación checkin</th>
@@ -285,75 +324,91 @@
         <th rowspan="3">Tiempo promedio espera embarque</th>
         <th rowspan="3">Tiempo ocupación embarque</th>
         <th rowspan="3">Porcentaje Ocupación embarque</th>
+        <th rowspan="3">AC Waiting Time Embalaje</th>
+        <th rowspan="3">Tiempo promedio espera Embalaje</th>
+        <th rowspan="3">Tiempo ocupación Embalaje</th>
+        <th rowspan="3">Porcentaje Ocupación Embalaje</th>
         <th rowspan="3">Cantidad personas atendidas</th>
         <th rowspan="4">Máxima cantidad de personas en cola de seguridad</th>
         <th rowspan="3">Cantidad promedio personas en cola de pasaporte</th>
         <th colspan="{{ passengers_in_range | length * 2}}">Passenger</th>
       </tr>
-      <tr>
-        <th rowspan="2">Rnd</th>
-        <th rowspan="2">Time Between Arrivals</th>
-        <th rowspan="2">Next Arrival</th>
-        <th rowspan="2">Rnd</th>
-        <th rowspan="2">Time Between Arrivals</th>
-        <th rowspan="2">Next Arrival</th>
-        <th rowspan="2">Rnd</th>
-        <th rowspan="2">Time Between Arrivals</th>
-        <th rowspan="2">Next Arrival</th>
-        <th rowspan="2">Rnd</th>
-        <th rowspan="2">Time Between Arrivals</th>
-        <th rowspan="2">Next Arrival</th>
-        <th rowspan="2">Rnd</th>
-        <th rowspan="2">Time of Attention</th>
-        {% for i in range(1, checkin_servers + 1) %}
-        <th rowspan="2">{{ i }}</th>
-        {% endfor %}
-        <th rowspan="2">Rnd</th>
-        <th rowspan="2">Time of Attention</th>
-        <th rowspan="2">1</th>
-        <th rowspan="2">2</th>
-        <th rowspan="2">Rnd</th>
-        <th rowspan="2">Time of Attention</th>
-        <th rowspan="2">1</th>
-        <th rowspan="2">2</th>
-        <th rowspan="2">Rnd</th>
-        <th rowspan="2">Time of Attention</th>
-        <th rowspan="2">1</th>
-        <th rowspan="2">2</th>
-        <th rowspan="2">3</th>
-        {% for i in range(1, checkin_servers + 1) %}
-        <th>{{ i }}</th>
-        {% endfor %}
-        <th rowspan="2">Queue</th>
-        <th>1</th>
-        <th>2</th>
-        <th rowspan="2">Queue</th>
-        <th>1</th>
-        <th>2</th>
-        <th rowspan="2">Queue</th>
-        <th>1</th>
-        <th>2</th>
-        <th>3</th>
-        <th rowspan="2">Queue</th>
+    </tr>
+    <tr>
+      <th rowspan="2">Rnd</th>
+      <th rowspan="2">Time Between Arrivals</th>
+      <th rowspan="2">Next Arrival</th>
+      <th rowspan="2">Rnd</th>
+      <th rowspan="2">Time Between Arrivals</th>
+      <th rowspan="2">Next Arrival</th>
+      <th rowspan="2">Rnd</th>
+      <th rowspan="2">Time Between Arrivals</th>
+      <th rowspan="2">Next Arrival</th>
+      <th rowspan="2">Rnd</th>
+      <th rowspan="2">Time Between Arrivals</th>
+      <th rowspan="2">Next Arrival</th>
+      <th rowspan="2">RND va a embalaje (>0.38 no va)</th>
+      <th rowspan="2">Rnd</th>
+      <th rowspan="2">Time Between Arrivals</th>
+      <th rowspan="2">Next Arrival</th>
+      <th rowspan="2">Rnd</th>
+      <th rowspan="2">Time of Attention</th>
+      {% for i in range(1, checkin_servers + 1) %}
+      <th rowspan="2">{{ i }}</th>
+      {% endfor %}
+      <th rowspan="2">Rnd</th>
+      <th rowspan="2">Time of Attention</th>
+      <th rowspan="2">1</th>
+      <th rowspan="2">2</th>
+      <th rowspan="2">Rnd</th>
+      <th rowspan="2">Time of Attention</th>
+      <th rowspan="2">1</th>
+      <th rowspan="2">2</th>
+      <th rowspan="2">Rnd</th>
+      <th rowspan="2">Time of Attention</th>
+      <th rowspan="2">1</th>
+      <th rowspan="2">2</th>
+      <th rowspan="2">3</th>
+      <th rowspan="2">Rnd</th>
+      <th rowspan="2">Time of Attention</th>
+      <th rowspan="2">1</th>
+      <th rowspan="2">2</th>
+      {% for i in range(1, checkin_servers + 1) %}
+      <th>{{ i }}</th>
+      {% endfor %}
+      <th rowspan="2">Queue</th>
+      <th>1</th>
+      <th>2</th>
+      <th rowspan="2">Queue</th>
+      <th>1</th>
+      <th>2</th>
+      <th rowspan="2">Queue</th>
+      <th>1</th>
+      <th>2</th>
+      <th>3</th>
+      <th rowspan="2">Queue</th>
+      <th>1</th>
+      <th>2</th>
+      <th rowspan="2">Queue</th>
         {% for passenger in passengers_in_range %}
         <th colspan="2">{{ passenger }}</th>
         {% endfor %}
     </tr>
-      <tr>
-        {% for i in range(1, checkin_servers + 1) %}
-        <th>State</th>
-        {% endfor %}
-        <th>State</th>
-        <th>State</th>
-        <th>State</th>
-        <th>State</th>
-        <th>State</th>
-        <th>State</th>
-        <th>State</th>
-        {% for passenger in passengers_in_range %}
+    <tr>
+      {% for i in range(1, checkin_servers + 1) %}
+      <th>State</th>
+      {% endfor %}
+      <th>State</th>
+      <th>State</th>
+      <th>State</th>
+      <th>State</th>
+      <th>State</th>
+      <th>State</th>
+      <th>State</th>
+      {% for passenger in passengers_in_range %}
         <th>State</th>
         <th>Started waiting</th>
-        {% endfor %}
+      {% endfor %}
     </tr>
     </thead>
 
@@ -375,6 +430,10 @@
         <td>{{ row.boarding_arrival_rnd }}</td>
         <td>{{ row.boarding_arrival_time_between }}</td>
         <td>{{ row.boarding_arrival_next }}</td>
+        <td>{{ row.embalaje_goes_rnd }}</td>
+        <td>{{ row.embalaje_arrival_rnd }}</td>
+        <td>{{ row.embalaje_arrival_time_between }}</td>
+        <td>{{ row.embalaje_arrival_next }}</td>
         <td>{{ row.end_checkin_rnd }}</td>
         <td>{{ row.end_checkin_time }}</td>
         {% for i in range(1, checkin_servers + 1) %}
@@ -393,6 +452,10 @@
         <td>{{ row.end_boarding_1 }}</td>
         <td>{{ row.end_boarding_2 }}</td>
         <td>{{ row.end_boarding_3 }}</td>
+        <td>{{ row.end_embalaje_rnd }}</td>
+        <td>{{ row.end_embalaje_time }}</td>
+        <td>{{ row.end_embalaje_1 }}</td>
+        <td>{{ row.end_embalaje_2 }}</td>
         {% for i in range(1, checkin_servers + 1) %}
         <td>{{ row['checkin_state_' ~ i] }}</td>
         {% endfor %}
@@ -407,6 +470,9 @@
         <td>{{ row.boarding_state_2 }}</td>
         <td>{{ row.boarding_state_3 }}</td>
         <td>{{ row.boarding_queue }}</td>
+        <td>{{ row.embalaje_state_1 }}</td>
+        <td>{{ row.embalaje_state_2 }}</td>
+        <td>{{ row.embalaje_queue }}</td>
         <td>{{ row.ac_waiting_time_checkin }}</td>
         <td>{{ row.average_time_checkin }}</td>
         <td>{{ row.occupation_time_checkin }}</td>
@@ -423,6 +489,10 @@
         <td>{{ row.average_time_boarding }}</td>
         <td>{{ row.occupation_time_boarding }}</td>
         <td>{{ row.percent_time_boarding }} %</td>
+        <td>{{ row.ac_waiting_time_embalaje }}</td>
+        <td>{{ row.average_time_embalaje }}</td>
+        <td>{{ row.occupation_time_embalaje }}</td>
+        <td>{{ row.percent_time_embalaje }} %</td>
         <td>{{ row.amount_people_attended }} </td>
         <td>{{ row.max_amount_sec_queue }} </td>
         <td>{{ row.promedy_amount_passport_queue }} </td>

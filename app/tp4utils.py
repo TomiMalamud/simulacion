@@ -17,16 +17,20 @@ def initialize_means(
     ends_passport,
     boarding_arrivals,
     ends_boarding,
+    embalaje_arrivals,
+    ends_embalaje
 ):
     return {
         "checkin": 60 / checkin_arrivals,
         "security": 60 / security_arrivals,
         "passport": 60 / passport_arrivals,
         "boarding": 60 / boarding_arrivals,
+        "embalaje": 60 / embalaje_arrivals,
         "checkin_service": 60 / ends_checkin,
         "security_service": 60 / ends_security,
         "passport_service": 60 / ends_passport,
         "boarding_service": 60 / ends_boarding,
+        "embalaje_service": 60 / ends_embalaje,
     }
 
 
