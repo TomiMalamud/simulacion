@@ -126,3 +126,16 @@ def handle_queue(
                 checkin_servers,
                 occupation_start_times
             )
+
+def calcular_proximo_corte(clock):
+    intervalo_tiempo = 0
+    rnd = round(random.random(),2)
+    if rnd < 0.2:
+        intervalo_tiempo = 12
+    elif rnd < 0.8:
+        intervalo_tiempo = 18
+    else:
+        intervalo_tiempo = 24
+
+    proximo_corte = clock + intervalo_tiempo
+    return rnd, intervalo_tiempo, proximo_corte

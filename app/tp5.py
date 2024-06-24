@@ -1,6 +1,6 @@
 import random
 from flask import Flask, Blueprint, render_template, request
-from .tp4utils import *
+from .tp4y5utils import *
 import time
 
 app = Flask(__name__)
@@ -47,12 +47,16 @@ def simulate(
     max_security_queue = 0
     cantidad_promedio_cola = 0
     passport_queue_time_sum = 0 
+    power_outage = False
+    power_outage_start_time = 0
+    thermal_switch_cooling_start = 0
 
     # Initialize arrival times
     for process in means:
         if "_service" not in process:
             rnd = float(all_rows[0][f"{process}_arrival_rnd"])
             arrival_time_between = exponential_random(means[process], rnd)
+            rnd_corte, intervalo_corte, prox_corte = calcular_proximo_corte(0)
             all_rows[0][
                 f"{process}_arrival_time_between"
             ] = f"{arrival_time_between:.2f}"
@@ -60,6 +64,9 @@ def simulate(
             all_rows[0][f"ac_waiting_time_{process}"] = "0.00"
             all_rows[0][f"average_time_{process}"] = "0.00"
             all_rows[0][f"occupation_time_{process}"] = "0.00"
+            all_rows[0]["corte_arrival_rnd"] = rnd_corte
+            all_rows[0]["corte_arrival_time_between"] = intervalo_corte
+            all_rows[0]["corte_arrival_next"] = prox_corte
 
             server_count = (
                 checkin_servers

@@ -308,6 +308,7 @@
         <th colspan="3">Passport</th>
         <th colspan="4">Boarding</th>
         <th colspan="3">Embalaje</th>
+        <th colspan="5">Corte de Energía</th>
         <th rowspan="3">AC Waiting Time Check-in</th>
         <th rowspan="3">Tiempo promedio espera checkin</th>
         <th rowspan="3">Tiempo ocupación checkin</th>
@@ -390,6 +391,11 @@
       <th>1</th>
       <th>2</th>
       <th rowspan="2">Queue</th>
+      <th rowspan="2">Rnd</th>
+      <th rowspan="2">Intervalo próximo corte</th>
+      <th rowspan="2">Próximo Corte</th>
+      <th rowspan="2">Intervalo Fin Enfriamiento</th>
+      <th rowspan="2">Fin Enfriamiento</th>
         {% for passenger in passengers_in_range %}
         <th colspan="2">{{ passenger }}</th>
         {% endfor %}
@@ -473,6 +479,11 @@
         <td>{{ row.embalaje_state_1 }}</td>
         <td>{{ row.embalaje_state_2 }}</td>
         <td>{{ row.embalaje_queue }}</td>
+        <td>{{row.corte_arrival_rnd}}</td>
+        <td>{{row.corte_arrival_time_between}}</td>
+        <td>{{row.corte_arrival_next}}</td>
+        <td>{{row.corte_intervalo_enfriamiento}}</td>
+        <td>{{row.end_enfriamiento}}</td>
         <td>{{ row.ac_waiting_time_checkin }}</td>
         <td>{{ row.average_time_checkin }}</td>
         <td>{{ row.occupation_time_checkin }}</td>
