@@ -121,32 +121,38 @@ def simulate(
             new_row["power_outage_time"] = f"{power_outage_duration_time:.2f}"
             new_row["end_power_outage"] = clock + power_outage_duration_time
 
-            for event in means:
-                if "_service" not in event and event != "power_outage":
-                    server_count = checkin_servers if event == "checkin" else (3 if event == "boarding" else 2)
-                    suspended_services[event] = []
-                    for server_id in range(1, server_count + 1):
-                        if new_row[f"{event}_state_{server_id}"] == "Busy":
-                            suspended_time = float(new_row[f"end_{event}_{server_id}"]) - clock
-                            suspended_services[event].append((server_id, suspended_time))
-                        new_row[f"end_{event}_{server_id}"] = float("inf")
-                        new_row[f"{event}_state_{server_id}"] = "Suspended"
+            # Only suspend passport services
+            event = "passport"
+            server_count = 2  # Assuming passport has 2 servers
+            suspended_services[event] = []
+            for server_id in range(1, server_count + 1):
+                if new_row[f"{event}_state_{server_id}"] == "Busy":
+                    suspended_time = float(new_row[f"end_{event}_{server_id}"]) - clock
+                    suspended_services[event].append((server_id, suspended_time))
+                new_row[f"end_{event}_{server_id}"] = float("inf")
+                new_row[f"{event}_state_{server_id}"] = "Suspended"
 
         elif next_event == "end_power_outage":
             new_row["power_outage"] = False
             new_row["event"] = "Power Outage End"
             new_row["end_power_outage"] = float('inf')
 
-            for event, suspended_list in suspended_services.items():
-                for server_id, suspended_time in suspended_list:
+            # Resume only passport services
+            event = "passport"
+            if event in suspended_services:
+                for server_id, suspended_time in suspended_services[event]:
                     new_row[f"end_{event}_{server_id}"] = clock + suspended_time
                     new_row[f"{event}_state_{server_id}"] = "Busy"
             suspended_services.clear()
 
-        elif "end" in next_event and not new_row["power_outage"]:
+        elif "end" in next_event:
             parts = next_event.split("_")
             event_name = parts[1]
             server_id = parts[2]
+
+            # Skip passport events during power outage
+            if new_row["power_outage"] and event_name == "passport":
+                continue
 
             if f"end_{event_name}_{server_id}" in event_id_map:
                 event_id, passenger_id, _ = event_id_map[f"end_{event_name}_{server_id}"] 
@@ -194,8 +200,13 @@ def simulate(
             else:
                 print(f"Warning: No matching end event found for {next_event}")
 
-        elif not new_row["power_outage"]:
+        else:
             event_name = next_event.split("_")[0]
+
+            # Skip passport arrivals during power outage
+            if new_row["power_outage"] and event_name == "passport":
+                continue
+
             arrival_counts[event_name] += 1
             event_id_map[event_name] += 1
             event_id = f"{event_name.capitalize()[:3]}_{arrival_counts[event_name]}"
@@ -287,13 +298,12 @@ def simulate(
                     new_row[f"percent_time_{event}"] = f"{percent_time:.2f}"
                 else:
                     new_row[f"percent_time_{event}"] = "0.00"
-        if new_row["power_outage"]:
-            for event in means:
-                if "_service" not in event and event != "power_outage":
-                    server_count = checkin_servers if event == "checkin" else (3 if event == "boarding" else 2)
-                    for server_id in range(1, server_count + 1):
-                        new_row[f"end_{event}_{server_id}"] = float("inf")
-                        new_row[f"{event}_state_{server_id}"] = "Suspended"
+#        if new_row["power_outage"]:
+#            event = "passport"
+#            server_count = 2  # Assuming passport has 2 servers
+#            for server_id in range(1, server_count + 1):
+#                new_row[f"end_{event}_{server_id}"] = float("inf")
+#                new_row[f"{event}_state_{server_id}"] = "Suspended"
 
 
         all_rows.append(new_row)
