@@ -49,6 +49,7 @@ def simulate(
     passport_queue_time_sum = 0 
     power_outage = False
     power_outage_start_time = 0
+    suspended_services = {}
 
     # Initialize arrival times
     for process in means:
@@ -90,7 +91,7 @@ def simulate(
                     server_count = checkin_servers if event == "checkin" else (3 if event == "boarding" else 2)
                     for server_id in range(1, server_count + 1):
                         end_time = prev_row[f"end_{event}_{server_id}"]
-                        if end_time != "":
+                        if end_time != "" and end_time != float("inf"):
                             events_times[f"end_{event}_{server_id}"] = float(end_time)
         
         # Add end_power_outage to events_times if there's an ongoing outage
@@ -115,14 +116,32 @@ def simulate(
             arrival_time_between = power_outage_time(rnd)
             new_row["power_outage_arrival_time_between"] = f"{arrival_time_between:.2f}"
             new_row["power_outage_arrival_next"] = f"{clock + arrival_time_between:.2f}"
+            
             power_outage_duration_time = power_outage_duration(clock)
             new_row["power_outage_time"] = f"{power_outage_duration_time:.2f}"
             new_row["end_power_outage"] = clock + power_outage_duration_time
+
+            for event in means:
+                if "_service" not in event and event != "power_outage":
+                    server_count = checkin_servers if event == "checkin" else (3 if event == "boarding" else 2)
+                    suspended_services[event] = []
+                    for server_id in range(1, server_count + 1):
+                        if new_row[f"{event}_state_{server_id}"] == "Busy":
+                            suspended_time = float(new_row[f"end_{event}_{server_id}"]) - clock
+                            suspended_services[event].append((server_id, suspended_time))
+                        new_row[f"end_{event}_{server_id}"] = float("inf")
+                        new_row[f"{event}_state_{server_id}"] = "Suspended"
 
         elif next_event == "end_power_outage":
             new_row["power_outage"] = False
             new_row["event"] = "Power Outage End"
             new_row["end_power_outage"] = float('inf')
+
+            for event, suspended_list in suspended_services.items():
+                for server_id, suspended_time in suspended_list:
+                    new_row[f"end_{event}_{server_id}"] = clock + suspended_time
+                    new_row[f"{event}_state_{server_id}"] = "Busy"
+            suspended_services.clear()
 
         elif "end" in next_event and not new_row["power_outage"]:
             parts = next_event.split("_")
@@ -130,13 +149,9 @@ def simulate(
             server_id = parts[2]
 
             if f"end_{event_name}_{server_id}" in event_id_map:
-                event_id, passenger_id, _ = event_id_map[
-                    f"end_{event_name}_{server_id}"
-                ]
-
-                new_row["event"] = (
-                    f"End {event_name.capitalize()} ({server_id}) {event_id}"
-                )
+                event_id, passenger_id, _ = event_id_map[f"end_{event_name}_{server_id}"] 
+                new_row["event"] = (f"End {event_name.capitalize()} ({server_id}) {event_id}")
+                new_row[f"{event_name}_state_{server_id}"] = "Free"
 
                 if passenger_id in passenger_states:
                     new_row[f"passenger_{passenger_id}_state"] = "-"
@@ -148,7 +163,6 @@ def simulate(
                 new_row[f"end_{event_name}_rnd"] = ""
                 new_row[f"end_{event_name}_time"] = ""
                 new_row[f"end_{event_name}_{server_id}"] = ""
-                new_row[f"{event_name}_state_{server_id}"] = "Free"
 
                 del event_id_map[f"end_{event_name}_{server_id}"]
 
