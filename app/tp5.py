@@ -81,12 +81,10 @@ def simulate(
     total_rows = 10000 if total_rows > 50000 else total_rows
 
     while row_count <= total_rows:
-        print("Filas antes de procesar: ",len(all_rows))
-        print("Cantidad de filas procesadas:", row_count)
         prev_row = all_rows[-1]
         if row_count != 0:
             all_rows.pop()
-        print("Filas procesadas menos 1: ",len(all_rows))
+
         events_times = {}
 
         for event in means:
@@ -99,7 +97,7 @@ def simulate(
                         if end_time != "" and end_time != float("inf"):
                             events_times[f"end_{event}_{server_id}"] = float(end_time)
         
-        # Add end_power_outage to events_times if there's an ongoing outage
+
         if prev_row["power_outage"]:
             events_times["end_power_outage"] = prev_row["end_power_outage"]
 
@@ -109,10 +107,6 @@ def simulate(
         new_row = prev_row.copy()
         new_row["clock"] = clock
         new_row["row_id"] = row_count + 1
-
-
-#        if new_row["clock"] == prev_row["clock"]:
-#            new_row["clock"] += 0.00000001
 
 
         for process in means:
@@ -164,8 +158,8 @@ def simulate(
             event_name = parts[1]
             server_id = parts[2]
             # Skip passport events during power outage
-            if new_row["power_outage"] and event_name == "passport":
-                continue
+            #if new_row["power_outage"] and event_name == "passport":
+            #    continue
 
             if f"end_{event_name}_{server_id}" in event_id_map:
                 event_id, passenger_id, _ = event_id_map[f"end_{event_name}_{server_id}"] 
@@ -217,8 +211,8 @@ def simulate(
             event_name = next_event.split("_")[0]
 
             # Skip passport arrivals during power outage
-            if new_row["power_outage"] and event_name == "passport":
-                continue
+            #if new_row["power_outage"] and event_name == "passport":
+            #    continue
 
             arrival_counts[event_name] += 1
             event_id_map[event_name] += 1
@@ -314,8 +308,7 @@ def simulate(
                     new_row[f"percent_time_{event}"] = "0.00"
 
         all_rows.append(new_row)
-        print("Filas después de procesar:  ",len(all_rows))
-
+        
         if row_count >= start_row and rows_shown < additional_rows:
             rows_to_show.append(new_row)
             rows_shown += 1
