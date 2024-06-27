@@ -50,6 +50,7 @@ def simulate(
     power_outage = False
     power_outage_start_time = 0
     suspended_services = {}
+    remaining_service_times = {}
 
     # Initialize arrival times
     for process in means:
@@ -120,15 +121,16 @@ def simulate(
             power_outage_duration_time = power_outage_duration(clock)
             new_row["power_outage_time"] = f"{power_outage_duration_time:.2f}"
             new_row["end_power_outage"] = clock + power_outage_duration_time
-
+            
+            remaining_service_times.clear()
             for event in means:
                 if "_service" not in event and event != "power_outage":
                     server_count = checkin_servers if event == "checkin" else (3 if event == "boarding" else 2)
-                    suspended_services[event] = []
                     for server_id in range(1, server_count + 1):
                         if new_row[f"{event}_state_{server_id}"] == "Busy":
-                            suspended_time = float(new_row[f"end_{event}_{server_id}"]) - clock
-                            suspended_services[event].append((server_id, suspended_time))
+                            remaining_time = float(new_row[f"end_{event}_{server_id}"]) - clock
+                            remaining_service_times[f"{event}_{server_id}"] = remaining_time
+                            new_row[f"{event}_remaining_{server_id}"] = f"{remaining_time:.2f}"
                         new_row[f"end_{event}_{server_id}"] = float("inf")
                         new_row[f"{event}_state_{server_id}"] = "Suspended"
 
@@ -137,12 +139,19 @@ def simulate(
             new_row["event"] = "Power Outage End"
             new_row["end_power_outage"] = float('inf')
 
-            for event, suspended_list in suspended_services.items():
-                for server_id, suspended_time in suspended_list:
-                    new_row[f"end_{event}_{server_id}"] = clock + suspended_time
-                    new_row[f"{event}_state_{server_id}"] = "Busy"
-            suspended_services.clear()
+            for event in means:
+                if "_service" not in event and event != "power_outage":
+                    server_count = checkin_servers if event == "checkin" else (3 if event == "boarding" else 2)
+                    for server_id in range(1, server_count + 1):
+                        key = f"{event}_{server_id}"
+                        if key in remaining_service_times:
+                            new_row[f"end_{event}_{server_id}"] = clock + remaining_service_times[key]
+                            new_row[f"{event}_state_{server_id}"] = "Busy"
+                            new_row[f"{event}_remaining_{server_id}"] = ""  # Clear the remaining time
+                        else:
+                            new_row[f"{event}_state_{server_id}"] = "Free"
 
+            remaining_service_times.clear()  # Clear the dictionary after restoring times
         elif "end" in next_event and not new_row["power_outage"]:
             parts = next_event.split("_")
             event_name = parts[1]
@@ -194,7 +203,7 @@ def simulate(
             else:
                 print(f"Warning: No matching end event found for {next_event}")
 
-        elif not new_row["power_outage"]:
+        else:  # This handles all arrivals, including during power outages
             event_name = next_event.split("_")[0]
             arrival_counts[event_name] += 1
             event_id_map[event_name] += 1
@@ -207,37 +216,37 @@ def simulate(
 
             rnd_arrival = float(new_row[f"{event_name}_arrival_rnd"])
             arrival_time_between = exponential_random(means[event_name], rnd_arrival)
-            new_row[f"{event_name}_arrival_time_between"] = (
-                f"{arrival_time_between:.2f}"
-            )
-            new_row[f"{event_name}_arrival_next"] = (
-                f"{clock + arrival_time_between:.2f}"
-            )
+            new_row[f"{event_name}_arrival_time_between"] = f"{arrival_time_between:.2f}"
+            new_row[f"{event_name}_arrival_next"] = f"{clock + arrival_time_between:.2f}"
+            if event_name == "security":
+                # Update max_security_queue when a new passenger is added to the security queue
+                max_security_queue = max(max_security_queue, new_row[f"{event_name}_queue"])
 
-            if not update_service_state(
-                new_row,
-                event_name,
-                means,
-                clock,
-                passenger_states,
-                event_id_map,
-                new_passenger_id,
-                checkin_servers,
-                occupation_start_times,
-            ):
+            if not new_row["power_outage"] and event_name != "power_outage":
+                if not update_service_state(
+                    new_row,
+                    event_name,
+                    means,
+                    clock,
+                    passenger_states,
+                    event_id_map,
+                    new_passenger_id,
+                    checkin_servers,
+                    occupation_start_times,
+                ):
+                    new_row[f"{event_name}_queue"] += 1
+                    passenger_states[new_passenger_id] = f"in_queue_{event_name}"
+                    new_row[f"passenger_{new_passenger_id}_state"] = passenger_states[new_passenger_id]
+                    new_row[f"passenger_{new_passenger_id}_started_waiting"] = clock
+            else:
+                # During power outage, all new arrivals go directly to the queue
                 new_row[f"{event_name}_queue"] += 1
                 passenger_states[new_passenger_id] = f"in_queue_{event_name}"
-                new_row[f"passenger_{new_passenger_id}_state"] = passenger_states[
-                    new_passenger_id
-                ]
-                new_row[f"passenger_{new_passenger_id}_started_waiting"] = (
-                    clock  # Initialize when the passenger starts waiting
-                )
-                # Actualizar el máximo de la cola de seguridad
-                if event_name == "security":
-                    max_security_queue = max(max_security_queue, new_row["security_queue"])
+                new_row[f"passenger_{new_passenger_id}_state"] = passenger_states[new_passenger_id]
+                new_row[f"passenger_{new_passenger_id}_started_waiting"] = clock
 
             new_row["amount_people_attended"] = passenger_completed
+        
         
 
         # Agregar el máximo de la cola de seguridad a cada fila
@@ -292,6 +301,10 @@ def simulate(
                 if "_service" not in event and event != "power_outage":
                     server_count = checkin_servers if event == "checkin" else (3 if event == "boarding" else 2)
                     for server_id in range(1, server_count + 1):
+                        if new_row[f"{event}_state_{server_id}"] == "Busy":
+                            remaining_time = float(new_row[f"end_{event}_{server_id}"]) - clock
+                            remaining_service_times[f"{event}_{server_id}"] = remaining_time
+                            new_row[f"{event}_remaining_{server_id}"] = f"{remaining_time:.2f}"
                         new_row[f"end_{event}_{server_id}"] = float("inf")
                         new_row[f"{event}_state_{server_id}"] = "Suspended"
 
@@ -334,8 +347,8 @@ def simulate(
 
     passenger_count = passenger_id_map["current_passenger_id"]
 
-    final_averages = {event: float(all_rows[-1][f"average_time_{event}"]) for event in arrival_counts.keys()}
-    final_percents = {event: float(all_rows[-1][f"percent_time_{event}"]) for event in arrival_counts.keys()}
+    final_averages = {event: float(all_rows[-1][f"average_time_{event}"]) for event in arrival_counts.keys() if event != "power_outage"}
+    final_percents = {event: float(all_rows[-1][f"percent_time_{event}"]) for event in arrival_counts.keys() if event != "power_outage"}
     print("Final Averages:", final_averages)
     print("Final Percents:", final_percents)
 
