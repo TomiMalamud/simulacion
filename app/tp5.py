@@ -1,6 +1,6 @@
 import random
 from flask import Flask, Blueprint, render_template, request
-from .tp4utils import *
+from .tp4y5utils import *
 import time
 
 app = Flask(__name__)
@@ -47,15 +47,19 @@ def simulate(
     max_security_queue = 0
     cantidad_promedio_cola = 0
     passport_queue_time_sum = 0 
+    power_outage = False
+    power_outage_start_time = 0
+    suspended_services = {}
 
     # Initialize arrival times
     for process in means:
         if "_service" not in process:
             rnd = float(all_rows[0][f"{process}_arrival_rnd"])
-            arrival_time_between = exponential_random(means[process], rnd)
-            all_rows[0][
-                f"{process}_arrival_time_between"
-            ] = f"{arrival_time_between:.2f}"
+            if process == "power_outage":
+                arrival_time_between = power_outage_time(rnd)
+            else:
+                arrival_time_between = exponential_random(means[process], rnd)
+            all_rows[0][f"{process}_arrival_time_between"] = f"{arrival_time_between:.2f}"
             all_rows[0][f"{process}_arrival_next"] = f"{arrival_time_between:.2f}"
             all_rows[0][f"ac_waiting_time_{process}"] = "0.00"
             all_rows[0][f"average_time_{process}"] = "0.00"
@@ -77,48 +81,96 @@ def simulate(
     total_rows = 10000 if total_rows > 50000 else total_rows
 
     while row_count <= total_rows:
+        print("Filas antes de procesar: ",len(all_rows))
+        print("Cantidad de filas procesadas:", row_count)
         prev_row = all_rows[-1]
+        if row_count != 0:
+            all_rows.pop()
+        print("Filas procesadas menos 1: ",len(all_rows))
         events_times = {}
 
         for event in means:
             if "_service" not in event:
-                events_times[f"{event}_arrival"] = float(
-                    prev_row[f"{event}_arrival_next"]
-                )
-                server_count = (
-                    checkin_servers
-                    if process == "checkin"
-                    else (3 if process == "boarding" else 2)
-                )
-                for server_id in range(1, server_count + 1):
-                    end_time = prev_row[f"end_{event}_{server_id}"]
-                    if end_time != "":
-                        events_times[f"end_{event}_{server_id}"] = float(end_time)
+                events_times[f"{event}_arrival"] = float(prev_row[f"{event}_arrival_next"])
+                if event != "power_outage":
+                    server_count = checkin_servers if event == "checkin" else (3 if event == "boarding" else 2)
+                    for server_id in range(1, server_count + 1):
+                        end_time = prev_row[f"end_{event}_{server_id}"]
+                        if end_time != "" and end_time != float("inf"):
+                            events_times[f"end_{event}_{server_id}"] = float(end_time)
+        
+        # Add end_power_outage to events_times if there's an ongoing outage
+        if prev_row["power_outage"]:
+            events_times["end_power_outage"] = prev_row["end_power_outage"]
 
         next_event, clock = min(events_times.items(), key=lambda x: x[1])
+    
 
         new_row = prev_row.copy()
         new_row["clock"] = clock
         new_row["row_id"] = row_count + 1
+
+
+#        if new_row["clock"] == prev_row["clock"]:
+#            new_row["clock"] += 0.00000001
+
 
         for process in means:
             if "_service" not in process:
                 new_row[f"{process}_arrival_rnd"] = ""
                 new_row[f"{process}_arrival_time_between"] = ""
 
-        if "end" in next_event:
+        if next_event == "power_outage_arrival" and not new_row["power_outage"]:
+            new_row["power_outage"] = True
+            new_row["event"] = "Power Outage Start"
+            new_row["power_outage_arrival_rnd"] = f"{random.random():.4f}"
+            rnd = float(new_row["power_outage_arrival_rnd"])
+            arrival_time_between = power_outage_time(rnd)
+            new_row["power_outage_arrival_time_between"] = f"{arrival_time_between:.2f}"
+            new_row["power_outage_arrival_next"] = f"{clock + arrival_time_between:.2f}"
+            
+            power_outage_duration_time = power_outage_duration(clock)
+            new_row["power_outage_time"] = f"{power_outage_duration_time:.2f}"
+            new_row["end_power_outage"] = clock + power_outage_duration_time
+
+            # Only suspend passport services
+            event = "passport"
+            server_count = 2  # Assuming passport has 2 servers
+            suspended_services[event] = []
+            for server_id in range(1, server_count + 1):
+                if new_row[f"{event}_state_{server_id}"] == "Busy":
+                    suspended_time = float(new_row[f"end_{event}_{server_id}"]) - clock
+                    suspended_services[event].append((server_id, suspended_time))
+                new_row[f"end_{event}_{server_id}"] = float("inf")
+                new_row[f"{event}_state_{server_id}"] = "Suspended"
+
+
+        elif next_event == "end_power_outage":
+            new_row["power_outage"] = False
+            new_row["event"] = "Power Outage End"
+            new_row["end_power_outage"] = float('inf')
+
+            # Resume only passport services
+            event = "passport"
+            if event in suspended_services:
+                for server_id, suspended_time in suspended_services[event]:
+                    new_row[f"end_{event}_{server_id}"] = clock + suspended_time
+                    new_row[f"{event}_state_{server_id}"] = "Busy"
+            suspended_services.clear()
+
+
+        elif "end" in next_event:
             parts = next_event.split("_")
             event_name = parts[1]
             server_id = parts[2]
+            # Skip passport events during power outage
+            if new_row["power_outage"] and event_name == "passport":
+                continue
 
             if f"end_{event_name}_{server_id}" in event_id_map:
-                event_id, passenger_id, _ = event_id_map[
-                    f"end_{event_name}_{server_id}"
-                ]
-
-                new_row["event"] = (
-                    f"End {event_name.capitalize()} ({server_id}) {event_id}"
-                )
+                event_id, passenger_id, _ = event_id_map[f"end_{event_name}_{server_id}"] 
+                new_row["event"] = (f"End {event_name.capitalize()} ({server_id}) {event_id}")
+                new_row[f"{event_name}_state_{server_id}"] = "Free"
 
                 if passenger_id in passenger_states:
                     new_row[f"passenger_{passenger_id}_state"] = "-"
@@ -130,7 +182,6 @@ def simulate(
                 new_row[f"end_{event_name}_rnd"] = ""
                 new_row[f"end_{event_name}_time"] = ""
                 new_row[f"end_{event_name}_{server_id}"] = ""
-                new_row[f"{event_name}_state_{server_id}"] = "Free"
 
                 del event_id_map[f"end_{event_name}_{server_id}"]
 
@@ -164,6 +215,11 @@ def simulate(
 
         else:
             event_name = next_event.split("_")[0]
+
+            # Skip passport arrivals during power outage
+            if new_row["power_outage"] and event_name == "passport":
+                continue
+
             arrival_counts[event_name] += 1
             event_id_map[event_name] += 1
             event_id = f"{event_name.capitalize()[:3]}_{arrival_counts[event_name]}"
@@ -215,6 +271,7 @@ def simulate(
         # Ensure passenger states are updated in the new row
         for key in passenger_states:
             new_row[f"passenger_{key}_state"] = passenger_states.get(key, "-")
+
         for event in means:
             if "_service" not in event:
                 new_row[f"ac_waiting_time_{event}"] = new_row.get(
@@ -257,6 +314,7 @@ def simulate(
                     new_row[f"percent_time_{event}"] = "0.00"
 
         all_rows.append(new_row)
+        print("Filas después de procesar:  ",len(all_rows))
 
         if row_count >= start_row and rows_shown < additional_rows:
             rows_to_show.append(new_row)
