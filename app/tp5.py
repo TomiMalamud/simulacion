@@ -157,6 +157,10 @@ def simulate(
             event_name = parts[1]
             server_id = parts[2]
 
+            # Skip passport events during power outage
+            if new_row["power_outage"] and event_name == "passport":
+                continue
+
             if f"end_{event_name}_{server_id}" in event_id_map:
                 event_id, passenger_id, _ = event_id_map[f"end_{event_name}_{server_id}"] 
                 new_row["event"] = (f"End {event_name.capitalize()} ({server_id}) {event_id}")
@@ -205,6 +209,11 @@ def simulate(
 
         else:  # This handles all arrivals, including during power outages
             event_name = next_event.split("_")[0]
+
+            # Skip passport arrivals during power outage
+            if new_row["power_outage"] and event_name == "passport":
+                continue
+
             arrival_counts[event_name] += 1
             event_id_map[event_name] += 1
             event_id = f"{event_name.capitalize()[:3]}_{arrival_counts[event_name]}"
