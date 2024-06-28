@@ -1,4 +1,5 @@
 {% extends 'base.html' %} {% block content %}
+
 <div class="container p-5 w-80">
   <h1 class="text-center">TP5 - Simulación de un aeropuerto - Actualización</h1>
   <form method="GET" action="/tp5" id="simulation-form">
@@ -245,44 +246,53 @@
       </div>
     </div>
   </form>
-  {% if final_averages and final_percents %}
-  <div class="mt-4">
-    <h3>Resumen</h3>
-    <div class="row">
-      <div class="col-md-6">
-        <h4>Tiempo promedio de espera</h4>
-        <ul>
-          {% for event, avg_time in final_averages.items() %}
-          <li>{{ event }}: {{ avg_time }} minutos</li>
-          {% endfor %}
-        </ul>
-        {% if min_avg_event %}
-        <p>Para esperar el menor tiempo posible, el pasajero debe ir a {{ min_avg_event }}.</p>
-        {% endif %}
 
-      </div>
-      <div class="col-md-6">
-        <h4>Porcentaje de ocupación de cada servidor</h4>
-        <ul>
-          {% for event, percent_time in final_percents.items() %}
-          <li>{{ event }}: {{ percent_time }}%</li>
-          {% endfor %}
-        </ul>
-      </div>
-      <div class="col-md-6">
-          <h4>Cantidad total de personas atendidas</h4>
-          <p>{{passengers_completed}}</p>
-      </div>
-      <div class="col-md-6">
-        <h4>Cantidad máxima de personas en cola de seguridad</h4>
-        <p>{{max_security_queue}}</p>
-      </div>
-      <div class="col-md-6">
-        <h4>Cantidad promedio de personas en cola de pasaporte</h4>
-        <p>{{cantidad_promedio_cola}}</p>
-      </div>
+  {% set translations = {
+    'security': 'seguridad',
+    'passport': 'pasaporte',
+    'checkin': 'check-in',
+    'boarding': 'embarque',
+    'embalaje': 'embalaje'
+  } %}
+
+  {% if final_averages and final_percents %}
+<div class="mt-5">
+  <h2>Resumen</h2>
+  <hr />
+  <div class="row">
+    <div class="col-md-6">
+      <h4>Tiempo promedio de espera</h4>
+      <ul>
+        {% for event, avg_time in final_averages.items() %}
+        <li>{{ translations[event.lower()] | capitalize }}: {{ avg_time }} minutos</li>
+        {% endfor %}
+      </ul>
+      {% if min_avg_event %}
+      <p>Para esperar el menor tiempo posible, el pasajero debe ir a {{ translations[min_avg_event.lower()] | capitalize }}.</p>
+      {% endif %}
+    </div>
+    <div class="col-md-6">
+      <h4>Porcentaje de ocupación de cada servidor</h4>
+      <ul>
+        {% for event, percent_time in final_percents.items() %}
+        <li>{{ translations[event.lower()] | capitalize }}: {{ percent_time }}%</li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="col-md-6">
+      <h4>Cantidad total de personas atendidas</h4>
+      <p>{{passengers_completed}}</p>
+    </div>
+    <div class="col-md-6">
+      <h4>Cantidad máxima de personas en cola de seguridad</h4>
+      <p>{{max_security_queue}}</p>
+    </div>
+    <div class="col-md-6">
+      <h4>Cantidad promedio de personas en cola de pasaporte</h4>
+      <p>{{cantidad_promedio_cola}}</p>
     </div>
   </div>
+</div>
   {% endif %}
 
 
@@ -425,7 +435,25 @@
       {% for row in data %}
       <tr>
         <td>{{ row.row_id }}</td>
-        <td class="text-start">{{ row.event }}</td>
+        <td class="text-start">      
+          {% if row.event.startswith('End ') %}
+          {% set event_details = row.event[4:] %}
+          {% set event_name = event_details.split(' (')[0] %}
+          {% set server_and_id = event_details.split(' (')[1].rsplit(') ', 1) %}
+          {% set server_id = server_and_id[0] %}
+          {% set event_id = server_and_id[1] %}
+          {% set translated_event_name = translations[event_name.lower()] %}
+          Fin de {{ translated_event_name | capitalize }} ({{ server_id }}) {{ event_id }}
+        {% elif 'arrival' in row.event %}
+          {% set event_parts = row.event.split(' arrival ') %}
+          {% set event_name = event_parts[0] %}
+          {% set event_id = event_parts[1] %}
+          {% set translated_event_name = translations[event_name.lower()] %}
+          Llegada de {{ translated_event_name | capitalize }} {{ event_id }}
+        {% else %}
+          {{ row.event }} <!-- Keep original if not matching known formats -->
+        {% endif %}
+          </td>
         <td>{{ row.clock }}</td>
         <td>{{ row.checkin_arrival_rnd }}</td>
         <td>{{ row.checkin_arrival_time_between }}</td>
