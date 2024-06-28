@@ -271,7 +271,7 @@
         {% endfor %}
       </ul>
       {% if min_avg_event %}
-      <p>Para esperar el menor tiempo posible, el pasajero debe ir a {{ translations[min_avg_event.lower()] | capitalize }}.</p>
+      <p>Para esperar el menor tiempo posible, el pasajero debe ir a <span style="font-weight:700">{{ translations[min_avg_event.lower()] | capitalize }}</span>.</p>
       {% endif %}
     </div>
     <div class="col-md-6">

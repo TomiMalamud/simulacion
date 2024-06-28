@@ -2,13 +2,13 @@ import math
 import random
 
 
-def exponential_random(mean, rnd):
+def exponencial(mean, rnd):
     while rnd == 1.0:
         rnd = random.random()
     return -mean * math.log(1 - rnd)
 
 
-def initialize_means(
+def medias(
     checkin_arrivals,
     ends_checkin,
     security_arrivals,
@@ -32,12 +32,11 @@ def initialize_means(
         "boarding_service": 60 / ends_boarding,
         "embalaje_service": 60 / ends_embalaje,
     }
-    # Add power_outage to the means dictionary
-    means["power_outage"] = 60  # Average time between power outages (1 hour)
+    means["power_outage"] = 60 
     return means
 
 
-def create_initial_row(means, checkin_servers):
+def inicializar(means, checkin_servers):
     initial_row = {"row_id": 0, "event": "Inicio", "clock": 0, "power_outage": False, "end_power_outage": float('inf')}
 
     for event in means:
@@ -63,7 +62,7 @@ def create_initial_row(means, checkin_servers):
     return initial_row
 
 
-def update_service_state(
+def actualizar_estado_servicio(
     new_row, event, means, clock, passenger_states, event_id_map, passenger_id, checkin_servers, occupation_start_times
 ):
     server_count = checkin_servers if event == "checkin" else (3 if event == "boarding" else 2)
@@ -73,7 +72,7 @@ def update_service_state(
         if new_row[f"{event}_state_{server_id}"] == "Libre":
             new_row[f"{event}_state_{server_id}"] = "Ocupado"
             rnd_end = random.random()
-            end_time = exponential_random(means[f"{event}_service"], rnd_end)
+            end_time = exponencial(means[f"{event}_service"], rnd_end)
             new_row[f"end_{event}_rnd"] = f"{rnd_end:.4f}"
             new_row[f"end_{event}_time"] = f"{end_time:.2f}"
             end_clock = clock + end_time
@@ -96,7 +95,7 @@ def update_service_state(
     return False
 
 
-def handle_queue(
+def manejar_cola(
     new_row, event, means, clock, passenger_states, event_id_map, passenger_id_map, checkin_servers, occupation_start_times
 ):
     if new_row[f"{event}_queue"] > 0:
@@ -109,18 +108,15 @@ def handle_queue(
         if queued_passengers:
             passenger_id = min(queued_passengers)
             
-            # Calculate waiting time
             started_waiting = float(new_row[f"passenger_{passenger_id}_started_waiting"])
             waiting_time = clock - started_waiting
             
-            # Update accumulated waiting time
             prev_ac_waiting_time = float(new_row.get(f"ac_waiting_time_{event}", 0))
             new_row[f"ac_waiting_time_{event}"] = f"{prev_ac_waiting_time + waiting_time:.2f}"
             
-            # Reset started_waiting time
             new_row[f"passenger_{passenger_id}_started_waiting"] = "-"
             
-            update_service_state(
+            actualizar_estado_servicio(
                 new_row,
                 event,
                 means,
@@ -132,29 +128,29 @@ def handle_queue(
                 occupation_start_times
             )
 
-def power_outage_time(rnd):
+def tiempo_corte_energia(rnd):
     if rnd < 0.2:
         return 12
     elif rnd < 0.8:
         return 18
     else:
         return 24
-def runge_kutta_solve(f, y0, t0, t_end, h):
+def runge_kutta(f, y0, t0, t_fin, h):
     t = t0
     y = y0
-    while t < t_end:
+    while t < t_fin:
         if y < 0:
-            return 0.5*(t - t0)  # Return the time when y becomes negative
+            return 0.5*(t - t0) 
         k1 = h * f(t, y)
         k2 = h * f(t + 0.5 * h, y + 0.5 * k1)
         k3 = h * f(t + 0.5 * h, y + 0.5 * k2)
         k4 = h * f(t + h, y + k3)
         y += (k1 + 2*k2 + 2*k3 + k4) / 6
         t += h
-    return t_end - t0  # Return the full time if y never becomes negative
+    return t_fin - t0  
     
-def power_outage_duration(clock):
+def duracion_corte_energia(reloj):
     def f(t, c):
         return 0.025 * t - 0.5 * c - 12.85
     
-    return runge_kutta_solve(f, clock, 0, 1000, 0.1)  # Assume max duration of 1000 minutes
+    return runge_kutta(f, reloj, 0, 1000, 0.1)

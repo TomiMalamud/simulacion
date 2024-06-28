@@ -23,7 +23,7 @@ def simulate(
     emabalaje_arrivals,
     ends_embalaje,
 ):
-    means = initialize_means(
+    means = medias(
         checkin_arrivals,
         ends_checkin,
         security_arrivals,
@@ -35,13 +35,13 @@ def simulate(
         emabalaje_arrivals,
         ends_embalaje
     )
-    all_rows = [create_initial_row(means, checkin_servers)]
+    all_rows = [inicializar(means, checkin_servers)]
     rows_to_show = []
     arrival_counts = {event: 0 for event in means if "_service" not in event}
     event_id_map = {event: 0 for event in means if "_service" not in event}
     passenger_id_map = {"current_passenger_id": 0}
     passenger_states = {}
-    passengers_in_range = set()  # New set to track active passengers
+    passengers_in_range = set() 
     occupation_start_times = {}
     passenger_completed = 0
     max_security_queue = 0
@@ -52,14 +52,13 @@ def simulate(
     suspended_services = {}
     remaining_service_times = {}
 
-    # Initialize arrival times
     for process in means:
         if "_service" not in process:
             rnd = float(all_rows[0][f"{process}_arrival_rnd"])
             if process == "power_outage":
-                arrival_time_between = power_outage_time(rnd)
+                arrival_time_between = tiempo_corte_energia(rnd)
             else:
-                arrival_time_between = exponential_random(means[process], rnd)
+                arrival_time_between = exponencial(means[process], rnd)
             all_rows[0][f"{process}_arrival_time_between"] = f"{arrival_time_between:.2f}"
             all_rows[0][f"{process}_arrival_next"] = f"{arrival_time_between:.2f}"
             all_rows[0][f"ac_waiting_time_{process}"] = "0.00"
@@ -95,7 +94,6 @@ def simulate(
                         if end_time != "" and end_time != float("inf"):
                             events_times[f"end_{event}_{server_id}"] = float(end_time)
         
-        # Add end_power_outage to events_times if there's an ongoing outage
         if prev_row["power_outage"]:
             events_times["end_power_outage"] = prev_row["end_power_outage"]
 
@@ -115,16 +113,16 @@ def simulate(
             new_row["event"] = "Empieza Corte Energía"
             new_row["power_outage_arrival_rnd"] = f"{random.random():.4f}"
             rnd = float(new_row["power_outage_arrival_rnd"])
-            arrival_time_between = power_outage_time(rnd)
+            arrival_time_between = tiempo_corte_energia(rnd)
             new_row["power_outage_arrival_time_between"] = f"{arrival_time_between:.2f}"
             new_row["power_outage_arrival_next"] = f"{clock + arrival_time_between:.2f}"
             
-            power_outage_duration_time = power_outage_duration(clock)
+            power_outage_duration_time = duracion_corte_energia(clock)
             new_row["power_outage_time"] = f"{power_outage_duration_time:.2f}"
             new_row["end_power_outage"] = clock + power_outage_duration_time
             
             remaining_service_times.clear()
-            for server_id in range(1, 3):  # Assuming passport has 2 servers
+            for server_id in range(1, 3):  
                 if new_row[f"passport_state_{server_id}"] == "Ocupado":
                     remaining_time = float(new_row[f"end_passport_{server_id}"]) - clock
                     remaining_service_times[f"passport_{server_id}"] = remaining_time
@@ -136,19 +134,18 @@ def simulate(
             new_row["power_outage"] = False
             new_row["event"] = "Fin Corte Energía"
             new_row["end_power_outage"] = float('inf')
-
-            # Resume passport service
-            for server_id in range(1, 3):  # Assuming passport has 2 servers
+            
+            for server_id in range(1, 3):  
                 key = f"passport_{server_id}"
                 if key in remaining_service_times:
                     new_row[f"end_passport_{server_id}"] = clock + remaining_service_times[key]
                     new_row[f"passport_state_{server_id}"] = "Ocupado"
-                    new_row[f"passport_remaining_{server_id}"] = ""  # Clear the remaining time
+                    new_row[f"passport_remaining_{server_id}"] = ""  
                 else:
                     new_row[f"passport_state_{server_id}"] = "Libre"
-                    new_row[f"end_passport_{server_id}"] = ""  # Reset the end time
+                    new_row[f"end_passport_{server_id}"] = ""  
 
-            remaining_service_times.clear()  # Clear the dictionary after restoring times
+            remaining_service_times.clear() 
 
         elif "end" in next_event:
             parts = next_event.split("_")
@@ -173,7 +170,7 @@ def simulate(
 
                 del event_id_map[f"end_{event_name}_{server_id}"]
 
-                handle_queue(
+                manejar_cola(
                     new_row,
                     event_name,
                     means,
@@ -201,11 +198,11 @@ def simulate(
             else:
                 print(f"Warning: No matching end event found for {next_event}")
 
-        else:  # This handles all arrivals, including during power outages
+        else:  
             event_parts = next_event.split('_')
             event_name = event_parts[0]
             
-            if event_name in arrival_counts:  # Check if it's an arrival event
+            if event_name in arrival_counts:  
 
                 
                 if event_name == "embalaje":
@@ -225,7 +222,7 @@ def simulate(
                 new_row[f"{event_name}_arrival_rnd"] = f"{random.random():.4f}"
 
                 rnd_arrival = float(new_row[f"{event_name}_arrival_rnd"])
-                arrival_time_between = exponential_random(means[event_name], rnd_arrival)
+                arrival_time_between = exponencial(means[event_name], rnd_arrival)
                 new_row[f"{event_name}_arrival_time_between"] = f"{arrival_time_between:.2f}"
                 new_row[f"{event_name}_arrival_next"] = f"{clock + arrival_time_between:.2f}"
                 
@@ -233,7 +230,7 @@ def simulate(
                     max_security_queue = max(max_security_queue, new_row[f"{event_name}_queue"])
 
                 if not new_row["power_outage"] and event_name != "power_outage":
-                    if not update_service_state(
+                    if not actualizar_estado_servicio(
                         new_row,
                         event_name,
                         means,
@@ -249,7 +246,6 @@ def simulate(
                         new_row[f"passenger_{new_passenger_id}_state"] = passenger_states[new_passenger_id]
                         new_row[f"passenger_{new_passenger_id}_started_waiting"] = clock
                 else:
-                    # During power outage, all new arrivals go directly to the queue
                     new_row[f"{event_name}_queue"] += 1
                     passenger_states[new_passenger_id] = f"in_queue_{event_name}"
                     new_row[f"passenger_{new_passenger_id}_state"] = passenger_states[new_passenger_id]
@@ -257,16 +253,10 @@ def simulate(
 
                 new_row["amount_people_attended"] = passenger_completed
             else:
-                # Handle non-arrival events (like end of service or power outage events)
                 new_row["event"] = next_event.replace("_", " ").capitalize()
-        
-        
-
-        # Agregar el máximo de la cola de seguridad a cada fila
+                
         new_row["max_amount_sec_queue"] = max_security_queue
-
-
-        # Ensure passenger states are updated in the new row
+        
         for key in passenger_states:
             new_row[f"passenger_{key}_state"] = passenger_states.get(key, "-")
         for event in means:
@@ -283,7 +273,7 @@ def simulate(
                     new_row[f"average_time_{event}"] = "0.00"
                 
                 if event == "passport":
-                    passport_queue_time_sum = ac_waiting_time  # Actualiza la suma del tiempo de espera para pasaporte
+                    passport_queue_time_sum = ac_waiting_time 
                 
                 if clock > 0:
                     cantidad_promedio_cola = passport_queue_time_sum / clock
@@ -299,10 +289,9 @@ def simulate(
                         f"{prev_occupation_time + current_occupation_time:.2f}"
                     )
                     occupation_start_times[event] = (
-                        clock  # Reset start time for next calculation
+                        clock 
                     )
 
-                # Calculate and store percent_time_{event}
                 occupation_time = float(new_row[f"occupation_time_{event}"])
                 if clock > 0:
                     percent_time = (occupation_time / clock) * 100
@@ -310,7 +299,7 @@ def simulate(
                 else:
                     new_row[f"percent_time_{event}"] = "0.00"
         if new_row["power_outage"]:
-            for server_id in range(1, 3):  # Assuming passport has 2 servers
+            for server_id in range(1, 3):
                 if new_row[f"passport_state_{server_id}"] == "Ocupado":
                     remaining_time = float(new_row[f"end_passport_{server_id}"]) - clock
                     remaining_service_times[f"passport_{server_id}"] = remaining_time
@@ -330,7 +319,6 @@ def simulate(
 
         row_count += 1
 
-    # Final update for occupation times
     for event in occupation_start_times:
         occupation_time = clock - occupation_start_times[event]
         prev_occupation_time = float(all_rows[-1][f"occupation_time_{event}"])
@@ -339,7 +327,6 @@ def simulate(
         ] = f"{prev_occupation_time + occupation_time:.2f}"
 
     passengers_in_range = set(sorted(passengers_in_range)[:500])
-    # Remove passenger state information for passengers not in passengers_in_range
     for row in rows_to_show:
         for key in list(row.keys()):
             if key.startswith("passenger_") and key.endswith("_state"):
@@ -360,7 +347,6 @@ def simulate(
     final_averages = {event: float(all_rows[-1][f"average_time_{event}"]) for event in arrival_counts.keys() if event != "power_outage"}
     final_percents = {event: float(all_rows[-1][f"percent_time_{event}"]) for event in arrival_counts.keys() if event != "power_outage"}
 
-    # Adjust final_percents to ensure all values are above 80
     for event, percent in final_percents.items():
         if percent <= 70 and total_rows >= 500:
             final_percents[event] = round(random.uniform(70, 90),2)
@@ -436,12 +422,12 @@ def tp5_render():
             )
         )
 
-        end_time = time.time()  # End the timer
-        processing_time = end_time - start_time  # Calculate the elapsed time
+        end_time = time.time()
+        processing_time = end_time - start_time
 
         print(
             f"Processing time: {processing_time:.2f} seconds"
-        )  # Print the processing time
+        ) 
         if final_averages:
             min_avg_event = min(final_averages, key=final_averages.get)
         print("Min Average Event:", min_avg_event)

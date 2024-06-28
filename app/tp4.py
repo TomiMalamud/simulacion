@@ -23,7 +23,7 @@ def simulate(
     emabalaje_arrivals,
     ends_embalaje,
 ):
-    means = initialize_means(
+    means = medias(
         checkin_arrivals,
         ends_checkin,
         security_arrivals,
@@ -35,7 +35,7 @@ def simulate(
         emabalaje_arrivals,
         ends_embalaje
     )
-    all_rows = [create_initial_row(means, checkin_servers)]
+    all_rows = [inicializar(means, checkin_servers)]
     rows_to_show = []
     arrival_counts = {event: 0 for event in means if "_service" not in event}
     event_id_map = {event: 0 for event in means if "_service" not in event}
@@ -52,7 +52,7 @@ def simulate(
     for process in means:
         if "_service" not in process:
             rnd = float(all_rows[0][f"{process}_arrival_rnd"])
-            arrival_time_between = exponential_random(means[process], rnd)
+            arrival_time_between = exponencial(means[process], rnd)
             all_rows[0][
                 f"{process}_arrival_time_between"
             ] = f"{arrival_time_between:.2f}"
@@ -134,7 +134,7 @@ def simulate(
 
                 del event_id_map[f"end_{event_name}_{server_id}"]
 
-                handle_queue(
+                manejar_cola(
                     new_row,
                     event_name,
                     means,
@@ -174,7 +174,7 @@ def simulate(
             new_row[f"{event_name}_arrival_rnd"] = f"{random.random():.4f}"
 
             rnd_arrival = float(new_row[f"{event_name}_arrival_rnd"])
-            arrival_time_between = exponential_random(means[event_name], rnd_arrival)
+            arrival_time_between = exponencial(means[event_name], rnd_arrival)
             new_row[f"{event_name}_arrival_time_between"] = (
                 f"{arrival_time_between:.2f}"
             )
@@ -182,7 +182,7 @@ def simulate(
                 f"{clock + arrival_time_between:.2f}"
             )
 
-            if not update_service_state(
+            if not actualizar_estado_servicio(
                 new_row,
                 event_name,
                 means,
