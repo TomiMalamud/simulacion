@@ -79,7 +79,7 @@ def simulate(
 
     row_count = 0
     rows_shown = 0
-    total_rows = 10000 if total_rows > 50000 else total_rows
+    total_rows = 20000 if total_rows > 50000 else total_rows
 
     while row_count <= total_rows:
         prev_row = all_rows[-1]
@@ -328,7 +328,7 @@ def simulate(
             f"occupation_time_{event}"
         ] = f"{prev_occupation_time + occupation_time:.2f}"
 
-    passengers_in_range = set(sorted(passengers_in_range)[:100])
+    passengers_in_range = set(sorted(passengers_in_range)[:500])
     # Remove passenger state information for passengers not in passengers_in_range
     for row in rows_to_show:
         for key in list(row.keys()):
