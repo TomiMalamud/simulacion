@@ -123,36 +123,33 @@ def simulate(
             new_row["end_power_outage"] = clock + power_outage_duration_time
             
             remaining_service_times.clear()
-            for event in means:
-                if "_service" not in event and event != "power_outage":
-                    server_count = checkin_servers if event == "checkin" else (3 if event == "boarding" else 2)
-                    for server_id in range(1, server_count + 1):
-                        if new_row[f"{event}_state_{server_id}"] == "Busy":
-                            remaining_time = float(new_row[f"end_{event}_{server_id}"]) - clock
-                            remaining_service_times[f"{event}_{server_id}"] = remaining_time
-                            new_row[f"{event}_remaining_{server_id}"] = f"{remaining_time:.2f}"
-                        new_row[f"end_{event}_{server_id}"] = float("inf")
-                        new_row[f"{event}_state_{server_id}"] = "Suspended"
+            for server_id in range(1, 3):  # Assuming passport has 2 servers
+                if new_row[f"passport_state_{server_id}"] == "Busy":
+                    remaining_time = float(new_row[f"end_passport_{server_id}"]) - clock
+                    remaining_service_times[f"passport_{server_id}"] = remaining_time
+                    new_row[f"passport_remaining_{server_id}"] = f"{remaining_time:.2f}"
+                new_row[f"end_passport_{server_id}"] = float("inf")
+                new_row[f"passport_state_{server_id}"] = "Suspended"
 
         elif next_event == "end_power_outage":
             new_row["power_outage"] = False
             new_row["event"] = "Power Outage End"
             new_row["end_power_outage"] = float('inf')
 
-            for event in means:
-                if "_service" not in event and event != "power_outage":
-                    server_count = checkin_servers if event == "checkin" else (3 if event == "boarding" else 2)
-                    for server_id in range(1, server_count + 1):
-                        key = f"{event}_{server_id}"
-                        if key in remaining_service_times:
-                            new_row[f"end_{event}_{server_id}"] = clock + remaining_service_times[key]
-                            new_row[f"{event}_state_{server_id}"] = "Busy"
-                            new_row[f"{event}_remaining_{server_id}"] = ""  # Clear the remaining time
-                        else:
-                            new_row[f"{event}_state_{server_id}"] = "Free"
+            # Resume passport service
+            for server_id in range(1, 3):  # Assuming passport has 2 servers
+                key = f"passport_{server_id}"
+                if key in remaining_service_times:
+                    new_row[f"end_passport_{server_id}"] = clock + remaining_service_times[key]
+                    new_row[f"passport_state_{server_id}"] = "Busy"
+                    new_row[f"passport_remaining_{server_id}"] = ""  # Clear the remaining time
+                else:
+                    new_row[f"passport_state_{server_id}"] = "Free"
+                    new_row[f"end_passport_{server_id}"] = ""  # Reset the end time
 
             remaining_service_times.clear()  # Clear the dictionary after restoring times
-        elif "end" in next_event and not new_row["power_outage"]:
+
+        elif "end" in next_event:
             parts = next_event.split("_")
             event_name = parts[1]
             server_id = parts[2]
@@ -204,48 +201,54 @@ def simulate(
                 print(f"Warning: No matching end event found for {next_event}")
 
         else:  # This handles all arrivals, including during power outages
-            event_name = next_event.split("_")[0]
-            arrival_counts[event_name] += 1
-            event_id_map[event_name] += 1
-            event_id = f"{event_name.capitalize()[:3]}_{arrival_counts[event_name]}"
-            passenger_id_map["current_passenger_id"] += 1
-            new_passenger_id = passenger_id_map["current_passenger_id"]
+            event_parts = next_event.split('_')
+            event_name = event_parts[0]
+            
+            if event_name in arrival_counts:  # Check if it's an arrival event
+                arrival_counts[event_name] += 1
+                event_id_map[event_name] += 1
+                event_id = f"{event_name.capitalize()[:3]}_{arrival_counts[event_name]}"
+                passenger_id_map["current_passenger_id"] += 1
+                new_passenger_id = passenger_id_map["current_passenger_id"]
 
-            new_row["event"] = f"{event_name.capitalize()} arrival {event_id}"
-            new_row[f"{event_name}_arrival_rnd"] = f"{random.random():.4f}"
+                new_row["event"] = f"{event_name.capitalize()} arrival {event_id}"
+                new_row[f"{event_name}_arrival_rnd"] = f"{random.random():.4f}"
 
-            rnd_arrival = float(new_row[f"{event_name}_arrival_rnd"])
-            arrival_time_between = exponential_random(means[event_name], rnd_arrival)
-            new_row[f"{event_name}_arrival_time_between"] = f"{arrival_time_between:.2f}"
-            new_row[f"{event_name}_arrival_next"] = f"{clock + arrival_time_between:.2f}"
-            if event_name == "security":
-                # Update max_security_queue when a new passenger is added to the security queue
-                max_security_queue = max(max_security_queue, new_row[f"{event_name}_queue"])
+                rnd_arrival = float(new_row[f"{event_name}_arrival_rnd"])
+                arrival_time_between = exponential_random(means[event_name], rnd_arrival)
+                new_row[f"{event_name}_arrival_time_between"] = f"{arrival_time_between:.2f}"
+                new_row[f"{event_name}_arrival_next"] = f"{clock + arrival_time_between:.2f}"
+                
+                if event_name == "security":
+                    max_security_queue = max(max_security_queue, new_row[f"{event_name}_queue"])
 
-            if not new_row["power_outage"] and event_name != "power_outage":
-                if not update_service_state(
-                    new_row,
-                    event_name,
-                    means,
-                    clock,
-                    passenger_states,
-                    event_id_map,
-                    new_passenger_id,
-                    checkin_servers,
-                    occupation_start_times,
-                ):
+                if not new_row["power_outage"] and event_name != "power_outage":
+                    if not update_service_state(
+                        new_row,
+                        event_name,
+                        means,
+                        clock,
+                        passenger_states,
+                        event_id_map,
+                        new_passenger_id,
+                        checkin_servers,
+                        occupation_start_times,
+                    ):
+                        new_row[f"{event_name}_queue"] += 1
+                        passenger_states[new_passenger_id] = f"in_queue_{event_name}"
+                        new_row[f"passenger_{new_passenger_id}_state"] = passenger_states[new_passenger_id]
+                        new_row[f"passenger_{new_passenger_id}_started_waiting"] = clock
+                else:
+                    # During power outage, all new arrivals go directly to the queue
                     new_row[f"{event_name}_queue"] += 1
                     passenger_states[new_passenger_id] = f"in_queue_{event_name}"
                     new_row[f"passenger_{new_passenger_id}_state"] = passenger_states[new_passenger_id]
                     new_row[f"passenger_{new_passenger_id}_started_waiting"] = clock
-            else:
-                # During power outage, all new arrivals go directly to the queue
-                new_row[f"{event_name}_queue"] += 1
-                passenger_states[new_passenger_id] = f"in_queue_{event_name}"
-                new_row[f"passenger_{new_passenger_id}_state"] = passenger_states[new_passenger_id]
-                new_row[f"passenger_{new_passenger_id}_started_waiting"] = clock
 
-            new_row["amount_people_attended"] = passenger_completed
+                new_row["amount_people_attended"] = passenger_completed
+            else:
+                # Handle non-arrival events (like end of service or power outage events)
+                new_row["event"] = next_event.replace("_", " ").capitalize()
         
         
 
@@ -297,16 +300,13 @@ def simulate(
                 else:
                     new_row[f"percent_time_{event}"] = "0.00"
         if new_row["power_outage"]:
-            for event in means:
-                if "_service" not in event and event != "power_outage":
-                    server_count = checkin_servers if event == "checkin" else (3 if event == "boarding" else 2)
-                    for server_id in range(1, server_count + 1):
-                        if new_row[f"{event}_state_{server_id}"] == "Busy":
-                            remaining_time = float(new_row[f"end_{event}_{server_id}"]) - clock
-                            remaining_service_times[f"{event}_{server_id}"] = remaining_time
-                            new_row[f"{event}_remaining_{server_id}"] = f"{remaining_time:.2f}"
-                        new_row[f"end_{event}_{server_id}"] = float("inf")
-                        new_row[f"{event}_state_{server_id}"] = "Suspended"
+            for server_id in range(1, 3):  # Assuming passport has 2 servers
+                if new_row[f"passport_state_{server_id}"] == "Busy":
+                    remaining_time = float(new_row[f"end_passport_{server_id}"]) - clock
+                    remaining_service_times[f"passport_{server_id}"] = remaining_time
+                    new_row[f"passport_remaining_{server_id}"] = f"{remaining_time:.2f}"
+                new_row[f"end_passport_{server_id}"] = float("inf")
+                new_row[f"passport_state_{server_id}"] = "Suspended"
 
 
         all_rows.append(new_row)
