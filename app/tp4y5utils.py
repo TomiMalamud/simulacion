@@ -38,7 +38,7 @@ def initialize_means(
 
 
 def create_initial_row(means, checkin_servers):
-    initial_row = {"row_id": 0, "event": "Initialization", "clock": 0, "power_outage": False, "end_power_outage": float('inf')}
+    initial_row = {"row_id": 0, "event": "Inicio", "clock": 0, "power_outage": False, "end_power_outage": float('inf')}
 
     for event in means:
         if "_service" not in event:
@@ -54,7 +54,7 @@ def create_initial_row(means, checkin_servers):
             if event != "power_outage":
                 for server_id in range(1, server_count + 1):
                     initial_row[f"end_{event}_{server_id}"] = float("inf")
-                    initial_row[f"{event}_state_{server_id}"] = "Free"
+                    initial_row[f"{event}_state_{server_id}"] = "Libre"
                 
                 initial_row[f"{event}_queue"] = 0
                 initial_row[f"ac_waiting_time_{event}"] = 0
@@ -67,11 +67,11 @@ def update_service_state(
     new_row, event, means, clock, passenger_states, event_id_map, passenger_id, checkin_servers, occupation_start_times
 ):
     server_count = checkin_servers if event == "checkin" else (3 if event == "boarding" else 2)
-    all_free_before = all(new_row[f"{event}_state_{i}"] == "Free" for i in range(1, server_count + 1))
+    all_free_before = all(new_row[f"{event}_state_{i}"] == "Libre" for i in range(1, server_count + 1))
 
     for server_id in range(1, server_count + 1):
-        if new_row[f"{event}_state_{server_id}"] == "Free":
-            new_row[f"{event}_state_{server_id}"] = "Busy"
+        if new_row[f"{event}_state_{server_id}"] == "Libre":
+            new_row[f"{event}_state_{server_id}"] = "Ocupado"
             rnd_end = random.random()
             end_time = exponential_random(means[f"{event}_service"], rnd_end)
             new_row[f"end_{event}_rnd"] = f"{rnd_end:.4f}"

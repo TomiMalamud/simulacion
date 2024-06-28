@@ -291,106 +291,106 @@
     <thead>
       <tr>
         <th rowspan="3">#</th>
-        <th rowspan="3">Event</th>
-        <th rowspan="3">Clock (min)</th>
-        <th colspan="3">Check-in Arrival</th>
-        <th colspan="3">Security Arrival</th>
-        <th colspan="3">Passport Arrival</th>
-        <th colspan="3">Boarding Arrival</th>
-        <th colspan="4">Embalaje Arrival</th>
-        <th colspan="{{ checkin_servers + 2 }}">End Check-in</th>
-        <th colspan="4">End Security</th>
-        <th colspan="4">End Passport</th>
-        <th colspan="5">End Boarding</th>
-        <th colspan="4">End Embalaje</th>
+        <th rowspan="3">Evento</th>
+        <th rowspan="3">Reloj (min)</th>
+        <th colspan="3">Llegada Check-in </th>
+        <th colspan="3">Llegada Seguridad</th>
+        <th colspan="3">Llegada Pasaporte </th>
+        <th colspan="3">Llegada Embarque</th>
+        <th colspan="4"> Llegada Embalaje</th>
+        <th colspan="{{ checkin_servers + 2 }}">Fin Check-in</th>
+        <th colspan="4">Fin Seguridad</th>
+        <th colspan="4">Fin Pasaporte</th>
+        <th colspan="5">Fin Embarque</th>
+        <th colspan="4">Fin Embalaje</th>
         <th colspan="{{ checkin_servers + 1 }}">Check-in</th>
-        <th colspan="3">Security</th>
-        <th colspan="5">Passport</th>
-        <th colspan="4">Boarding</th>
+        <th colspan="3">Seguridad</th>
+        <th colspan="5">Pasaporte</th>
+        <th colspan="4">Embarque</th>
         <th colspan="3">Embalaje</th>
         <th colspan="5">Corte de Energía</th>
-        <th rowspan="3">AC Waiting Time Check-in</th>
+        <th rowspan="3">AC Tiempo espera Check-in</th>
         <th rowspan="3">Tiempo promedio espera checkin</th>
         <th rowspan="3">Tiempo ocupación checkin</th>
         <th rowspan="3">Porcentaje Ocupación checkin</th>
-        <th rowspan="3">AC Waiting Time Security</th>
+        <th rowspan="3">AC Tiempo Espera Security</th>
         <th rowspan="3">Tiempo promedio espera seguridad</th>
         <th rowspan="3">Tiempo ocupación seguridad</th>
         <th rowspan="3">Porcentaje Ocupación seguridad</th>
-        <th rowspan="3">AC Waiting Time Passport</th>
+        <th rowspan="3">AC Tiempo Espera Pasaporte</th>
         <th rowspan="3">Tiempo promedio espera pasaporte</th>
         <th rowspan="3">Tiempo ocupación pasaporte</th>
         <th rowspan="3">Porcentaje Ocupación pasaporte</th>
-        <th rowspan="3">AC Waiting Time Boarding</th>
+        <th rowspan="3">AC Tiempo Espera Embarque</th>
         <th rowspan="3">Tiempo promedio espera embarque</th>
         <th rowspan="3">Tiempo ocupación embarque</th>
         <th rowspan="3">Porcentaje Ocupación embarque</th>
-        <th rowspan="3">AC Waiting Time Embalaje</th>
+        <th rowspan="3">AC Tiempo Espera Embalaje</th>
         <th rowspan="3">Tiempo promedio espera Embalaje</th>
         <th rowspan="3">Tiempo ocupación Embalaje</th>
         <th rowspan="3">Porcentaje Ocupación Embalaje</th>
         <th rowspan="3">Cantidad personas atendidas</th>
         <th rowspan="4">Máxima cantidad de personas en cola de seguridad</th>
         <th rowspan="3">Cantidad promedio personas en cola de pasaporte</th>
-        <th colspan="{{ passengers_in_range | length * 2}}">Passenger</th>
+        <th colspan="{{ passengers_in_range | length * 2}}">Pasajero</th>
       </tr>
     </tr>
     <tr>
       <th rowspan="2">Rnd</th>
-      <th rowspan="2">Time Between Arrivals</th>
-      <th rowspan="2">Next Arrival</th>
+      <th rowspan="2">Tiempo Entre Llegada</th>
+      <th rowspan="2">Próxima Llegada</th>
       <th rowspan="2">Rnd</th>
-      <th rowspan="2">Time Between Arrivals</th>
-      <th rowspan="2">Next Arrival</th>
+      <th rowspan="2">Tiempo Entre Llegada</th>
+      <th rowspan="2">Próxima Llegada</th>
       <th rowspan="2">Rnd</th>
-      <th rowspan="2">Time Between Arrivals</th>
-      <th rowspan="2">Next Arrival</th>
+      <th rowspan="2">Tiempo Entre Llegada</th>
+      <th rowspan="2">Próxima Llegada</th>
       <th rowspan="2">Rnd</th>
-      <th rowspan="2">Time Between Arrivals</th>
-      <th rowspan="2">Next Arrival</th>
+      <th rowspan="2">Tiempo Entre Llegada</th>
+      <th rowspan="2">Próxima Llegada</th>
       <th rowspan="2">RND va a embalaje (>0.38 no va)</th>
       <th rowspan="2">Rnd</th>
-      <th rowspan="2">Time Between Arrivals</th>
-      <th rowspan="2">Next Arrival</th>
+      <th rowspan="2">Tiempo Entre Llegada</th>
+      <th rowspan="2">Próxima Llegada</th>
       <th rowspan="2">Rnd</th>
-      <th rowspan="2">Time of Attention</th>
+      <th rowspan="2">Tiempo de atención</th>
       {% for i in range(1, checkin_servers + 1) %}
       <th rowspan="2">{{ i }}</th>
       {% endfor %}
       <th rowspan="2">Rnd</th>
-      <th rowspan="2">Time of Attention</th>
+      <th rowspan="2">Tiempo de atención</th>
       <th rowspan="2">1</th>
       <th rowspan="2">2</th>
       <th rowspan="2">Rnd</th>
-      <th rowspan="2">Time of Attention</th>
+      <th rowspan="2">Tiempo de atención</th>
       <th rowspan="2">1</th>
       <th rowspan="2">2</th>
       <th rowspan="2">Rnd</th>
-      <th rowspan="2">Time of Attention</th>
+      <th rowspan="2">Tiempo de atención</th>
       <th rowspan="2">1</th>
       <th rowspan="2">2</th>
       <th rowspan="2">3</th>
       <th rowspan="2">Rnd</th>
-      <th rowspan="2">Time of Attention</th>
+      <th rowspan="2">Tiempo de atención</th>
       <th rowspan="2">1</th>
       <th rowspan="2">2</th>
       {% for i in range(1, checkin_servers + 1) %}
       <th>{{ i }}</th>
       {% endfor %}
-      <th rowspan="2">Queue</th>
+      <th rowspan="2">Cola</th>
       <th>1</th>
       <th>2</th>
-      <th rowspan="2">Queue</th>
+      <th rowspan="2">Cola</th>
       <th colspan="2">1</th>
       <th colspan="2">2</th>
-      <th rowspan="2">Queue</th>
+      <th rowspan="2">Cola</th>
       <th>1</th>
       <th>2</th>
       <th>3</th>
-      <th rowspan="2">Queue</th>
+      <th rowspan="2">Cola</th>
       <th>1</th>
       <th>2</th>
-      <th rowspan="2">Queue</th>
+      <th rowspan="2">Cola</th>
       <th rowspan="2">Rnd</th>
       <th rowspan="2">Intervalo próximo corte</th>
       <th rowspan="2">Próximo Corte</th>
@@ -402,22 +402,22 @@
     </tr>
     <tr>
       {% for i in range(1, checkin_servers + 1) %}
-      <th>State</th>
+      <th>Estado</th>
       {% endfor %}
-      <th>State</th>
-      <th>State</th>
-      <th>State</th>
-      <th>Remaining Time</th>
-      <th>State</th>
-      <th>Remaining Time</th>
-      <th>State</th>
-      <th>State</th>
-      <th>State</th>
-      <th>State</th>
-      <th>State</th>
+      <th>Estado</th>
+      <th>Estado</th>
+      <th>Estado</th>
+      <th>Tiempo restante</th>
+      <th>Estado</th>
+      <th>Tiempo restante</th>
+      <th>Estado</th>
+      <th>Estado</th>
+      <th>Estado</th>
+      <th>Estado</th>
+      <th>Estado</th>
       {% for passenger in passengers_in_range %}
-        <th>State</th>
-        <th>Started waiting</th>
+      <th>Estado</th>
+        <th>Empezó espera</th>
       {% endfor %}
     </tr>
     </thead>
