@@ -346,12 +346,6 @@ def simulate(
 
     final_averages = {event: float(all_rows[-1][f"average_time_{event}"]) for event in arrival_counts.keys() if event != "power_outage"}
     final_percents = {event: float(all_rows[-1][f"percent_time_{event}"]) for event in arrival_counts.keys() if event != "power_outage"}
-
-    for event, percent in final_percents.items():
-        if percent <= 70 and total_rows >= 500:
-            final_percents[event] = round(random.uniform(70, 90),2)
-            print(f"Adjusting {event} percent to {final_percents[event]}")
-
     print("Final Averages:", final_averages)
     print("Final Percents:", final_percents)
 

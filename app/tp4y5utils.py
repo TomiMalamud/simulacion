@@ -135,6 +135,7 @@ def tiempo_corte_energia(rnd):
         return 18
     else:
         return 24
+    
 def runge_kutta(f, y0, t0, t_fin, h):
     t = t0
     y = y0
