@@ -248,12 +248,15 @@
   </form>
 
   {% set translations = {
+    'in': 'En',
+    'queue': 'Cola',
     'security': 'seguridad',
     'passport': 'pasaporte',
     'checkin': 'check-in',
     'boarding': 'embarque',
     'embalaje': 'embalaje'
   } %}
+  
 
   {% if final_averages and final_percents %}
 <div class="mt-5">
@@ -541,10 +544,36 @@
         <td>{{ row.max_amount_sec_queue }} </td>
         <td>{{ row.promedy_amount_passport_queue }} </td>
         {% for key in passengers_in_range %}
-        <td>{{ row['passenger_' ~ key ~ '_state'] }}</td>
+        <td>
+          {% set state_value = row['passenger_' ~ key ~ '_state'] %}
+          {% if 'in_' in state_value %}
+            {% set parts = state_value.split(' ') %}
+            {% set action_parts = parts[0].split('_') %}
+            {% set prefix = action_parts[0] %}
+            {% set queue_indicator = action_parts|length > 2 %}
+            {% set event_name = action_parts[-1] %}
+            {% set id = parts[1] %}
+            {% if prefix in translations %}
+              {{ translations[prefix] }}
+            {% else %}
+              {{ prefix }}
+            {% endif %}
+            {% if queue_indicator %}
+              {{ ' cola de' }}
+            {% endif %}
+            {% if event_name in translations %}
+              {{ translations[event_name] | capitalize }}
+            {% else %}
+              {{ event_name | capitalize }}
+            {% endif %}
+            {{ id }}
+          {% else %}
+            {{ state_value }} <!-- Keep original if not matching known formats -->
+          {% endif %}
+        </td>
         <td>{{ row['passenger_' ~ key ~ '_started_waiting'] }}</td>
-        {% endfor %}
-      </tr>
+      {% endfor %}
+                  </tr>
       {% endfor %}
     </tbody>
   </table>
