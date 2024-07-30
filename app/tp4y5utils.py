@@ -7,6 +7,8 @@ def exponencial(mean, rnd):
         rnd = random.random()
     return -mean * math.log(1 - rnd)
 
+def uniforme(a, b, rnd):
+    return a + (b - a) * rnd
 
 def medias(
     checkin_arrivals,
