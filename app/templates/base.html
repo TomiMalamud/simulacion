@@ -15,31 +15,44 @@
       type="text/css"
       href="{{ url_for('static', filename='style.css') }}"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
   </head>
   <body>
     <ul class="nav py-4 justify-content-center">
-      <li class="nav-item">
-        <a class="nav-link" aria-current="page" href="/">Grupo C</a>
-      </li>
+      {# 
+        <li class="nav-item">
+          <a class="nav-link" aria-current="page" href="/">Grupo C</a>
+        </li>
+  
+        <li class="nav-item">
+          <a class="nav-link" aria-current="page" href="/tp2"
+            >Variables Aleatorias</a
+          >
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/tp3">Montecarlo</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/tp4">Colas</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/tp5">TP5</a>
+        </li>
+  #}
 
       <li class="nav-item">
-        <a class="nav-link" aria-current="page" href="/tp2"
-          >Variables Aleatorias</a
-        >
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="/tp3">Montecarlo</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="/tp4">Colas</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="/tp5">TP5</a>
-      </li>
-      <li class="nav-item">
         <a class="nav-link" href="/tp-final">Final</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="/runge-kutta">Runge-Kutta</a>
       </li>
     </ul>
     {% block content %} {% endblock %}
   </body>
+  {%block scripts %} {%endblock %}
 </html>
