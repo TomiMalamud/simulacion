@@ -17,7 +17,7 @@ app.register_blueprint(ode_solver_bp)
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("tp-final.html")
 
 
 @app.errorhandler(404)

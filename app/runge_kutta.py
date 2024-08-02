@@ -9,7 +9,7 @@ def solve_ode(t_max, step_size):
     
     t = 0
     y = 0
-    dy = 0.5
+    dy = 0.05
     results = []
 
     while t <= t_max:
@@ -51,9 +51,24 @@ def solve_ode(t_max, step_size):
 
 @ode_solver_bp.route('/runge-kutta', methods=['GET', 'POST'])
 def runge_kutta():
+    # Default values
+    h = 0.001
+    max_t = 0.5
+    first_10 = 10
+    first_12 = 12
     results = None
-    t_max = 0.3
-    step_size = 0.001
+
     if request.method == 'POST':
-        results = solve_ode(t_max, step_size)
-    return render_template('runge-kutta.html', results=results, t_max=t_max, step_size=step_size)
+        h = float(request.form.get('h', h))
+        max_t = float(request.form.get('max_t', max_t))
+        first_10 = float(request.form.get('first_10', first_10))
+        first_12 = float(request.form.get('first_12', first_12))
+        
+        results = solve_ode(max_t, h)
+
+    return render_template('runge-kutta.html', 
+                           results=results, 
+                           h=h, 
+                           max_t=max_t, 
+                           first_10=first_10, 
+                           first_12=first_12)

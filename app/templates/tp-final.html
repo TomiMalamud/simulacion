@@ -85,7 +85,7 @@
         <th colspan="2">Silo 3</th>
         <th colspan="2">Silo 4</th>
         <th colspan="2">Suction tube</th>
-        <th colspan="10">Trucks</th>
+        <th colspan="{{ max_trucks }}">Trucks</th>
       </tr>
       <tr>
         <th rowspan="2">Rnd</th>
@@ -107,18 +107,14 @@
         <th rowspan="2">Amount of flour</th>
         <th rowspan="2">State</th>
         <th rowspan="2">Queue</th>
+        {% for i in range(max_trucks) %}
         <th>State</th>
-        <th>State</th>
-        <th>State</th>
-        <th>State</th>
-        <th>State</th>
+      {% endfor %}
       </tr>
       <tr>
-        <th>1</th>
-        <th>2</th>
-        <th>3</th>
-        <th>4</th>
-        <th>5</th>
+        {% for i in range(max_trucks) %}
+        <th>{{ i }}</th>
+      {% endfor %}
       </tr>
     </thead>
     <tbody class="table-group-divider">
@@ -145,11 +141,9 @@
           <td>{{ row.silo_4_flour }}</td>
           <td>{{ row.tube_queue }}</td>
           <td>{{ row.tube_state }}</td>
-          <td>{{ row.truck_1_state }}</td>
-          <td>{{ row.truck_2_state }}</td>
-          <td>{{ row.truck_3_state }}</td>
-          <td>{{ row.truck_4_state }}</td>
-          <td>{{ row.truck_5_state }}</td>
+          {% for i in range(max_trucks) %}
+          <td>{{ row.get('truck_' ~ (i) ~ '_state', '-') }}</td>
+        {% endfor %}
         </tr>
       {% endfor %}
     </tbody>
