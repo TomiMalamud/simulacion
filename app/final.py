@@ -112,6 +112,36 @@ class Simulation:
         self.current_supplying_silo = None
         self.truck_id_counter = 0
         self.trucks = {}
+        self.simulation_data = []
+        self.last_simulated_row = -1  # Add this line
+
+    def run_up_to(self, end_row: int) -> None:
+        start_row = self.last_simulated_row + 1  # Use last_simulated_row instead of len(self.simulation_data)
+        for i in range(start_row, end_row):
+            if i == 0:
+                self.initialize()
+                continue
+
+            event = self.get_next_event()
+            self.clock = event["time"]
+
+            if event["type"] == "Truck Arrival":
+                self.handle_truck_arrival(event)
+            elif event["type"] == "End of Unloading":
+                self.handle_end_of_unloading()
+            elif event["type"] == "Silo Emptying":
+                self.handle_silo_emptying()
+
+            self.update_silo_states()
+            self.simulation_data.append(self.create_row(i, event))
+            self.last_simulated_row = i  # Update last_simulated_row
+
+    def get_data(self, start_row: int, additional_rows: int, total_rows: int) -> List[dict]:
+        end_row = min(start_row + additional_rows, total_rows)
+        if end_row > self.last_simulated_row + 1:
+            self.run_up_to(end_row)
+        return self.simulation_data[start_row:end_row]
+
 
     def run(self, start_row: int, additional_rows: int) -> List[dict]:
         simulation_data = []
@@ -135,14 +165,14 @@ class Simulation:
 
         return simulation_data
 
-    def initialize(self, simulation_data):
+    def initialize(self):
         rnd = random.random()
         time_between_arrivals = (
             ARRIVAL_TIME_RANGE[0]
             + (ARRIVAL_TIME_RANGE[1] - ARRIVAL_TIME_RANGE[0]) * rnd
         )
         self.next_arrival = self.clock + time_between_arrivals
-        simulation_data.append(self.create_row(0, {"type": "Initialization"}))
+        self.simulation_data.append(self.create_row(0, {"type": "Initialization"}))
 
     def get_next_event(self):
         events = [
@@ -152,7 +182,7 @@ class Simulation:
         ]
         return min(events, key=lambda x: x["time"])
 
-    def handle_truck_arrival(self, event, simulation_data):
+    def handle_truck_arrival(self, event):
         rnd = random.random()
         time_between_arrivals = (
             ARRIVAL_TIME_RANGE[0]
@@ -185,7 +215,7 @@ class Simulation:
             }
         )
 
-    def handle_end_of_unloading(self, simulation_data):
+    def handle_end_of_unloading(self):
         additional_time = self.unloading_area.finish_unloading(self.silos)
         if additional_time > 0:
             self.end_unloading = self.clock + additional_time
@@ -195,7 +225,7 @@ class Simulation:
         if any(s.flour > 0 for s in self.silos):
             self.silo_emptying = self.clock + PLANT_CONSUMPTION_INTERVAL
 
-    def handle_silo_emptying(self, simulation_data):
+    def handle_silo_emptying(self):
         if (
             self.current_supplying_silo is None
             or self.silos[self.current_supplying_silo].flour == 0
@@ -294,6 +324,7 @@ class Simulation:
             "tube_queue": len(self.unloading_area.queue),
         }
 
+global_simulation = Simulation()
 
 app = Flask(__name__)
 final = Blueprint("final", __name__, template_folder="templates")
@@ -303,13 +334,36 @@ final = Blueprint("final", __name__, template_folder="templates")
 def tp_final():
     start_row = int(request.args.get("start_row", 0))
     additional_rows = int(request.args.get("additional_rows", 100))
+    total_rows = int(request.args.get("total_rows", 10000))
 
-    simulation = Simulation()
-    simulation_data = simulation.run(start_row, additional_rows)
+    # Ensure we've simulated up to the required point
+    global_simulation.run_up_to(total_rows)
+
+    # Get the first row
+    first_row = global_simulation.get_data(0, 1, total_rows)
+
+    # Get the requested range of rows
+    middle_rows = global_simulation.get_data(start_row, additional_rows, total_rows)
+
+    # Get the last row
+    last_row = global_simulation.get_data(total_rows - 1, 1, total_rows)
+
+    # Combine all rows
+    simulation_data = first_row + middle_rows + last_row
+
+    # Remove duplicate rows if any
+    simulation_data = [dict(t) for t in {tuple(d.items()) for d in simulation_data}]
+
+    # Sort the rows by index
+    simulation_data.sort(key=lambda x: x['index'])
+
     max_trucks = max(len([k for k in row.keys() if k.startswith("truck_") and k.endswith("_state")]) for row in simulation_data)
 
-    return render_template("tp-final.html", simulation_data=simulation_data, max_trucks=max_trucks)
-
+    return render_template(
+        "tp-final.html", 
+        simulation_data=simulation_data, 
+        max_trucks=max_trucks
+    )
 
 if __name__ == "__main__":
     app.register_blueprint(final)
