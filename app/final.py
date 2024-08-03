@@ -113,12 +113,12 @@ class Simulation:
         self.truck_id_counter = 0
         self.trucks = {}
         self.simulation_data = []
-        self.last_simulated_row = -1  # Add this line
+        self.last_simulated_row = -1
         self.tube_occupation_start = 0
         self.total_tube_occupation_time = 0
         self.last_event_time = 0
-        self.total_trucks = 0  # New variable to count total trucks that have unloaded
-        self.max_queue = 0  # New variable to track maximum queue length
+        self.total_trucks = 0 
+        self.max_queue = 0 
 
     def update_tube_occupation(self, current_time):
         if self.unloading_area.state == "Busy":
@@ -239,6 +239,15 @@ class Simulation:
             self.end_unloading = float("inf")
             self.total_trucks += 1
 
+        # Check if there's no silo currently supplying the plant
+        if self.current_supplying_silo is None:
+            # Find the first non-empty silo that's not being filled
+            for i, silo in enumerate(self.silos):
+                if silo.flour > 0 and silo.state != "Being filled":
+                    silo.state = "Supplying Plant"
+                    self.current_supplying_silo = i
+                    break
+
         if any(s.flour > 0 for s in self.silos):
             self.silo_emptying = self.clock + PLANT_CONSUMPTION_INTERVAL
 
@@ -253,27 +262,28 @@ class Simulation:
                 (
                     i
                     for i, s in enumerate(self.silos)
-                    if s.flour > 0
-                    and s.state not in ["Being filled", "Supplying Plant"]
+                    if s.flour > 0 and s.state != "Being filled"
                 ),
                 None,
             )
+            if self.current_supplying_silo is not None:
+                self.silos[self.current_supplying_silo].state = "Supplying Plant"
 
         if self.current_supplying_silo is not None:
             silo = self.silos[self.current_supplying_silo]
             silo.empty(PLANT_CONSUMPTION_RATE)
             if silo.flour == 0:
+                silo.state = "Free"
                 self.current_supplying_silo = next(
                     (
                         i
                         for i, s in enumerate(self.silos)
-                        if s.flour > 0
-                        and s.state not in ["Being filled", "Supplying Plant"]
+                        if s.flour > 0 and s.state != "Being filled"
                     ),
                     None,
                 )
-            else:
-                silo.state = "Supplying Plant"
+                if self.current_supplying_silo is not None:
+                    self.silos[self.current_supplying_silo].state = "Supplying Plant"
 
         if self.current_supplying_silo is not None or any(
             s.flour > 0 for s in self.silos
