@@ -85,6 +85,10 @@
         <th colspan="2">Silo 3</th>
         <th colspan="2">Silo 4</th>
         <th colspan="2">Suction tube</th>
+        <th rowspan="3">Occupation time</th>
+        <th rowspan="3">Occupation Percentage</th>
+        <th rowspan="3">Total Trucks</th>
+        <th rowspan="3">Max Trucks in Queue</th>
         <th colspan="{{ max_trucks }}">Trucks</th>
       </tr>
       <tr>
@@ -141,6 +145,10 @@
           <td>{{ row.silo_4_flour }}</td>
           <td>{{ row.tube_queue }}</td>
           <td>{{ row.tube_state }}</td>
+          <td>{{ row.tube_occupation_time }}</td>        
+          <td>{{ row.tube_occupation_percentage }} %</td>
+          <td> {{ row.total_trucks }}</td>
+          <td> {{ row.max_queue }}</td>
           {% for i in range(max_trucks) %}
           <td>{{ row.get('truck_' ~ (i) ~ '_state', '-') }}</td>
         {% endfor %}

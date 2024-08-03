@@ -114,15 +114,29 @@ class Simulation:
         self.trucks = {}
         self.simulation_data = []
         self.last_simulated_row = -1  # Add this line
+        self.tube_occupation_start = 0
+        self.total_tube_occupation_time = 0
+        self.last_event_time = 0
+        self.total_trucks = 0  # New variable to count total trucks that have unloaded
+        self.max_queue = 0  # New variable to track maximum queue length
+
+    def update_tube_occupation(self, current_time):
+        if self.unloading_area.state == "Busy":
+            occupation_duration = current_time - self.last_event_time
+            self.total_tube_occupation_time += occupation_duration
+        self.last_event_time = current_time
 
     def run_up_to(self, end_row: int) -> None:
-        start_row = self.last_simulated_row + 1  # Use last_simulated_row instead of len(self.simulation_data)
+        start_row = (
+            self.last_simulated_row + 1
+        )  # Use last_simulated_row instead of len(self.simulation_data)
         for i in range(start_row, end_row):
             if i == 0:
                 self.initialize()
                 continue
 
             event = self.get_next_event()
+            self.update_tube_occupation(event["time"])
             self.clock = event["time"]
 
             if event["type"] == "Truck Arrival":
@@ -136,12 +150,13 @@ class Simulation:
             self.simulation_data.append(self.create_row(i, event))
             self.last_simulated_row = i  # Update last_simulated_row
 
-    def get_data(self, start_row: int, additional_rows: int, total_rows: int) -> List[dict]:
+    def get_data(
+        self, start_row: int, additional_rows: int, total_rows: int
+    ) -> List[dict]:
         end_row = min(start_row + additional_rows, total_rows)
         if end_row > self.last_simulated_row + 1:
             self.run_up_to(end_row)
         return self.simulation_data[start_row:end_row]
-
 
     def run(self, start_row: int, additional_rows: int) -> List[dict]:
         simulation_data = []
@@ -203,6 +218,7 @@ class Simulation:
                 self.unloading_area.queue.append(truck)
         else:
             self.unloading_area.queue.append(truck)
+        self.max_queue = max(self.max_queue, len(self.unloading_area.queue))
 
         event.update(
             {
@@ -221,9 +237,12 @@ class Simulation:
             self.end_unloading = self.clock + additional_time
         else:
             self.end_unloading = float("inf")
+            self.total_trucks += 1
 
         if any(s.flour > 0 for s in self.silos):
             self.silo_emptying = self.clock + PLANT_CONSUMPTION_INTERVAL
+
+        self.max_queue = max(self.max_queue, len(self.unloading_area.queue))
 
     def handle_silo_emptying(self):
         if (
@@ -274,7 +293,18 @@ class Simulation:
                     silo.update_state()
 
     def create_row(self, index, event):
-        truck_states = {truck_id: truck.state for truck_id, truck in self.trucks.items()}
+        truck_states = {
+            truck_id: truck.state for truck_id, truck in self.trucks.items()
+        }
+        occupation_time = round(self.total_tube_occupation_time, 2)
+        occupation_percentage = round(
+            (
+                (self.total_tube_occupation_time / self.clock) * 100
+                if self.clock > 0
+                else 0
+            ),
+            2,
+        )
 
         return {
             "index": index,
@@ -320,9 +350,17 @@ class Simulation:
                 if isinstance(self.unloading_area.remaining_truck_load, (int, float))
                 else ""
             ),
-            **{f"truck_{truck_id}_state": state for truck_id, state in truck_states.items()},
+            **{
+                f"truck_{truck_id}_state": state
+                for truck_id, state in truck_states.items()
+            },
             "tube_queue": len(self.unloading_area.queue),
+            "tube_occupation_time": occupation_time,
+            "tube_occupation_percentage": occupation_percentage,
+            "total_trucks": self.total_trucks,
+            "max_queue": self.max_queue,
         }
+
 
 global_simulation = Simulation()
 
@@ -355,15 +393,17 @@ def tp_final():
     simulation_data = [dict(t) for t in {tuple(d.items()) for d in simulation_data}]
 
     # Sort the rows by index
-    simulation_data.sort(key=lambda x: x['index'])
+    simulation_data.sort(key=lambda x: x["index"])
 
-    max_trucks = max(len([k for k in row.keys() if k.startswith("truck_") and k.endswith("_state")]) for row in simulation_data)
+    max_trucks = max(
+        len([k for k in row.keys() if k.startswith("truck_") and k.endswith("_state")])
+        for row in simulation_data
+    )
 
     return render_template(
-        "tp-final.html", 
-        simulation_data=simulation_data, 
-        max_trucks=max_trucks
+        "tp-final.html", simulation_data=simulation_data, max_trucks=max_trucks
     )
+
 
 if __name__ == "__main__":
     app.register_blueprint(final)
